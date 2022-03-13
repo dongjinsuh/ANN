@@ -25,8 +25,7 @@ def readDatasets(h5f, path):
                 #'hits',
                 'rmsLongitudinal',
                 'rmsTransverse',
-                'rotationAngle',
-                'likelihood'
+                'rotationAngle'
                 ]
     data_list = [np.array(h5f.get(path + dset)).flatten() for dset in datasets]
     return np.array(data_list).transpose()
@@ -47,18 +46,6 @@ calib_dsets_Ti_n = readDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/')
 #load the undergrounddata reco_186 chip
 hf_rec = h5py.File('../Dongjin/Cast_IAXO_data/reco_186_fixed.h5')
 background_dsets = readDatasets(hf_rec, 'reconstruction/run_186/chip_3/')
-
-# load likelihood values
-likeli_ag_nocut = np.array(hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/likelihood'))
-likeli_al_nocut = np.array(hf.get('calibration-cdl-feb2019-Al-Al-4kV/likelihood'))
-likeli_c_nocut = np.array(hf.get('calibration-cdl-feb2019-C-EPIC-0.6kV/likelihood'))
-likeli_cu1_nocut = np.array(hf.get('calibration-cdl-feb2019-Cu-EPIC-0.9kV/likelihood'))
-likeli_cu2_nocut = np.array(hf.get('calibration-cdl-feb2019-Cu-EPIC-2kV/likelihood'))
-likeli_cn_nocut = np.array(hf.get('calibration-cdl-feb2019-Cu-Ni-15kV/likelihood'))
-likeli_mc_nocut = np.array(hf.get('calibration-cdl-feb2019-Mn-Cr-12kV/likelihood'))
-likeli_ti_nocut = np.array(hf.get('calibration-cdl-feb2019-Ti-Ti-9kV/likelihood'))
-
-likeli_back = np.array(hf_rec.get('reconstruction/run_186/chip_3/likelihood'))
 
 hf.close()
 hf_rec.close()
@@ -86,11 +73,8 @@ df = pd.DataFrame(calib_dsets,
                    'eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot',
-                   'likelihood'
+                   ,'rot'
                    ])
-#b = df.index.tolist()
-#print(len(b))
 
 dfc_cut = df[ ((df['eccen']>1) & (df['eccen']<5)) & ((df['eFC']>0) & (df['eFC']<15)) &
               ((df['kL']>-2) & (df['kL']<5)) & ((df['kT']>-2) & (df['kT']<4)) & ((df['len']>0) & (df['len']<14)) &
@@ -112,11 +96,10 @@ dfb = pd.DataFrame(background_dsets,
                    columns=['eccen','eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot',
-                   'likelihood'
+                   ,'rot'
                    ])
 
-dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & ((dfb['eFC']>0.0) & (dfb['eFC']<5)) &
+dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & #((dfb['eFC']>0.0) & (dfb['eFC']<5)) &
                ((dfb['kL']>-2) & (dfb['kL']<4)) & ((dfb['kT']>-2) & (dfb['kT']<4)) &
                ((dfb['len']>0) & (dfb['len']<18)) & ((dfb['sL']>-2) & (dfb['sL']<2)) &
                ((dfb['sT']>-2) & (dfb['sT']<2)) & ((dfb['frac']>-1) & (dfb['frac']<1)) &
@@ -125,7 +108,6 @@ dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & ((dfb['eFC']>0.0) & (d
                ((dfb['rmsT']>0) & (dfb['rmsT']<2)) ]
 
 dfb_cut = dfb_cut.drop('eFC', axis=1)
-dfb_cut = dfb_cut.drop('likelihood', axis=1)
 
 # validation data cut
 
@@ -133,12 +115,8 @@ dfv = pd.DataFrame(calib_dsets,
                     columns=['eccen','eFC',
                     'kL','kT','len','sL','sT','frac',#'hits',
                     'rmsL','rmsT'
-                    ,'rot', 'likelihood'
+                    ,'rot'
                     ])
-
-dfv_E = dfv.drop('likelihood', axis=1)
-
-#dfv = dfv.drop('eFC', axis=1)
 
 dfv_cut = dfv[ ((dfv['eccen']>0.0) & (dfv['eccen']<5)) & #((dfv['eFC']>0.0) & (dfv['eFC']<15)) &
                ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) &
@@ -154,7 +132,6 @@ df_LogL = dfv_cut['likelihood']
 likeli_Ag = df_LogL.to_numpy().astype(np.float32)
 '''
 dfv_cut = dfv_cut.drop('eFC', axis=1)
-dfv_cut = dfv_cut.drop('likelihood', axis=1)
 
 
 # cut for validation and LogL 
@@ -163,7 +140,7 @@ def validation_cut(calib_dsets):
                     columns=['eccen','eFC',
                     'kL','kT','len','sL','sT','frac',#'hits',
                     'rmsL','rmsT'
-                    ,'rot', 'likelihood'
+                    ,'rot'
                     ])
 
     dfv_cut = dfv[  ((dfv['eccen']>1) & (dfv['eccen']<2.5)) & #((dfv['eFC']>0) & (dfv['eFC']<15)) &
@@ -172,15 +149,10 @@ def validation_cut(calib_dsets):
               #((df['hits']>0) & (df['hits']<500)) & 
               ((dfv['rmsL']>0) & (dfv['rmsL']<4)) &
               ((dfv['rmsT']>0) & (dfv['rmsT']<2)) & ((dfv['rot']>-0.1) & (dfv['rot']<3.5))  ]
-    
-    # get LogL data which passed through cut 
-    df_LogL = dfv_cut['likelihood']
-    likeli_Ag = df_LogL.to_numpy().astype(np.float32)
 
     dfv_cut = dfv_cut.drop('eFC', axis=1)
-    dfv_cut = dfv_cut.drop('likelihood', axis=1)
 
-    return dfv_cut.to_numpy().astype(np.float32), likeli_Ag
+    return dfv_cut.to_numpy().astype(np.float32)
 
 
 
@@ -197,30 +169,6 @@ calibration_data = shuffleAndFilter(dfc_cut.to_numpy().astype(np.float32))
 background_data  = shuffleAndFilter(dfb_cut.to_numpy().astype(np.float32))
 validation_data_all = shuffleAndFilter(dfv_cut.to_numpy().astype(np.float32)) 
 
-
- # cdl validation data cut applied
-validation_data_ag = shuffleAndFilter(validation_cut(calib_dsets_Ag)[0])
-validation_data_al = shuffleAndFilter(validation_cut(calib_dsets_Al)[0])
-validation_data_c = shuffleAndFilter(validation_cut(calib_dsets_C)[0])
-validation_data_cu1 = shuffleAndFilter(validation_cut(calib_dsets_Cu09)[0])
-validation_data_cu2 = shuffleAndFilter(validation_cut(calib_dsets_Cu2)[0])
-validation_data_cn = shuffleAndFilter(validation_cut(calib_dsets_Cu_Ni)[0])
-validation_data_mc = shuffleAndFilter(validation_cut(calib_dsets_Mn_Cr)[0])
-validation_data_ti = shuffleAndFilter(validation_cut(calib_dsets_Ti)[0])
-
-
- # cdl logL data cut applied
-likeli_ag = validation_cut(calib_dsets_Ag_n)[1]
-likeli_al = validation_cut(calib_dsets_Al_n)[1]
-likeli_c = validation_cut(calib_dsets_C_n)[1]
-likeli_cu09 = validation_cut(calib_dsets_Cu09_n)[1]
-likeli_cu2 = validation_cut(calib_dsets_Cu2_n)[1]
-likeli_cn = validation_cut(calib_dsets_Cu_Ni_n)[1]
-likeli_mc = validation_cut(calib_dsets_Mn_Cr_n)[1]
-likeli_ti = validation_cut(calib_dsets_Ti_n)[1]
-
-
-
 #divide the data for training and test
 train_data = calibration_data[:70000]
 test_data = calibration_data[70001:80000]
@@ -228,106 +176,8 @@ test_data = calibration_data[70001:80000]
 train_data_background = background_data[:70000]
 test_data_background = background_data[70001:80000]
 
-#print(train_data_background)
 
 
- # cut the 
-def energycutValidation(df, min_cut, max_cut, num_data):
-    df = df[ ((dfv['eFC']>=min_cut) & (dfv['eFC']<=max_cut)) ]
-    df = df.to_numpy().astype(np.float32)
-    seed = 10
-    np.random.seed(seed)
-    np.random.shuffle(df)
-    df = df[:num_data]
-    return df
-
-n_e = 2000 
- # cdl data with only cut in energy 
-valid_data1 = energycutValidation(dfv_E, 0, 0.25, n_e)
-valid_data2 = energycutValidation(dfv_E, 0.25, 0.5, n_e)
-valid_data3 = energycutValidation(dfv_E, 0.5, 0.75, n_e)
-valid_data4 = energycutValidation(dfv_E, 0.75, 1, n_e)
-valid_data5 = energycutValidation(dfv_E, 1, 1.25, n_e)
-valid_data6 = energycutValidation(dfv_E, 1.25, 1.5, n_e)
-valid_data7 = energycutValidation(dfv_E, 1.5, 1.75, n_e)
-valid_data8 = energycutValidation(dfv_E, 1.75, 2, n_e)
-valid_data9 = energycutValidation(dfv_E, 2, 2.25, n_e)
-valid_data10 = energycutValidation(dfv_E, 2.25, 2.5, n_e)
-valid_data11 = energycutValidation(dfv_E, 2.5, 2.75, n_e)
-valid_data12 = energycutValidation(dfv_E, 2.75, 3, n_e)
-valid_data13 = energycutValidation(dfv_E, 3, 3.25, n_e)
-valid_data14 = energycutValidation(dfv_E, 3.25, 3.5, n_e)
-valid_data15 = energycutValidation(dfv_E, 3.5, 3.75, n_e)
-valid_data16 = energycutValidation(dfv_E, 3.75, 4, n_e)
-valid_data17 = energycutValidation(dfv_E, 4, 4.25, n_e)
-valid_data18 = energycutValidation(dfv_E, 4.25, 4.5, n_e)
-valid_data19 = energycutValidation(dfv_E, 4.5, 4.75, n_e)
-valid_data20 = energycutValidation(dfv_E, 4.75, 5, n_e)
-valid_data21 = energycutValidation(dfv_E, 5, 5.25, n_e)
-valid_data22 = energycutValidation(dfv_E, 5.25, 5.5, n_e)
-valid_data23 = energycutValidation(dfv_E, 5.5, 5.75, n_e)
-valid_data24 = energycutValidation(dfv_E, 5.75, 6, n_e)
-valid_data25 = energycutValidation(dfv_E, 6, 6.25, n_e)
-valid_data26 = energycutValidation(dfv_E, 6.25, 6.5, n_e)
-valid_data27 = energycutValidation(dfv_E, 6.5, 6.75, n_e)
-valid_data28 = energycutValidation(dfv_E, 6.75, 7, n_e)
-valid_data29 = energycutValidation(dfv_E, 7, 7.25, n_e)
-valid_data30 = energycutValidation(dfv_E, 7.25, 7.5, n_e)
-valid_data31 = energycutValidation(dfv_E, 7.5, 7.75, n_e)
-valid_data32 = energycutValidation(dfv_E, 7.75, 8, n_e)
-
-
-dset = np.concatenate((#valid_data1, 
-valid_data2, valid_data3, valid_data4, valid_data5, valid_data6,
-                       valid_data7, valid_data8, valid_data9, valid_data10, valid_data11, valid_data12 
-                       ,valid_data13, valid_data14, valid_data15, valid_data16, valid_data17, valid_data18
-                       ,valid_data19, valid_data20, valid_data21, valid_data22 
-                       ,valid_data23, valid_data24, valid_data25, valid_data26, valid_data27, valid_data28
-                       ,valid_data29, valid_data30, valid_data31, valid_data32
-                       ))
-
-#Plot Energieverteilung der Inputdaten
-
-dset = dset[:, 1] #taking only energyFromCharge values 
-plt.xlabel('E')
-plt.ylabel('event number')
-plt.hist(dset,100,alpha = 0.5, lw=2, label='')
-plt.show()
-
-valid_data1= np.delete(valid_data1,1,1)
-valid_data2= np.delete(valid_data2,1,1)
-valid_data3= np.delete(valid_data3,1,1)
-valid_data4= np.delete(valid_data4,1,1)
-valid_data5= np.delete(valid_data5,1,1)
-valid_data6= np.delete(valid_data6,1,1)
-valid_data7= np.delete(valid_data7,1,1)
-valid_data8= np.delete(valid_data8,1,1)
-valid_data9= np.delete(valid_data9,1,1)
-valid_data10= np.delete(valid_data10,1,1)
-valid_data11= np.delete(valid_data11,1,1)
-valid_data12= np.delete(valid_data12,1,1)
-valid_data13= np.delete(valid_data13,1,1)
-valid_data14= np.delete(valid_data14,1,1)
-valid_data15= np.delete(valid_data15,1,1)
-valid_data16= np.delete(valid_data16,1,1)
-valid_data17= np.delete(valid_data17,1,1)
-valid_data18= np.delete(valid_data18,1,1)
-valid_data19= np.delete(valid_data19,1,1)
-valid_data20= np.delete(valid_data20,1,1)
-valid_data21= np.delete(valid_data21,1,1)
-valid_data22= np.delete(valid_data22,1,1)
-valid_data23= np.delete(valid_data23,1,1)
-valid_data24= np.delete(valid_data24,1,1)
-valid_data25= np.delete(valid_data25,1,1)
-valid_data26= np.delete(valid_data26,1,1)
-valid_data27= np.delete(valid_data27,1,1)
-valid_data28= np.delete(valid_data28,1,1)
-valid_data29= np.delete(valid_data29,1,1)
-valid_data30= np.delete(valid_data30,1,1)
-valid_data31= np.delete(valid_data31,1,1)
-valid_data32= np.delete(valid_data32,1,1)
-
-#valid_data = calibration_data[50001:51000]
 valid_data = calibration_data[80001:90001]
 valid_data_back = background_data[80001:90001]
 
@@ -383,16 +233,6 @@ def setup_validation_calib(d, x):
     m = data.DataLoader(f, batch_size, shuffle=True, num_workers = 0)
     return m
  
-num_vset = 10000
-
-valid_iter_ag =setup_validation_calib(validation_data_ag, num_vset)
-valid_iter_al = setup_validation_calib(validation_data_al, num_vset)
-valid_iter_c = setup_validation_calib(validation_data_c, num_vset)
-valid_iter_cu1 = setup_validation_calib(validation_data_cu1, num_vset)
-valid_iter_cu2 = setup_validation_calib(validation_data_cu2, num_vset)
-valid_iter_cn = setup_validation_calib(validation_data_cn,num_vset)
-valid_iter_mc = setup_validation_calib(validation_data_mc, num_vset)
-valid_iter_ti = setup_validation_calib(validation_data_ti, num_vset)
 
 validation_set1 = Dataset(valid_data, label_calibration)
 validation_set2 = Dataset(valid_data_back, label_background)
@@ -401,74 +241,6 @@ valid_iter_cal = data.DataLoader(validation_set1, batch_size, shuffle=True, num_
 valid_iter_back = data.DataLoader(validation_set2, batch_size, shuffle=True, num_workers = 0)
 valid_iter = data.DataLoader(validation_set, batch_size, shuffle=True, num_workers=0)
 
-
-
-# validation sets with flat energy distribution 
-valid_set1 = Dataset(valid_data1, label_calibration)
-valid_set2 = Dataset(valid_data2, label_calibration)
-valid_set3 = Dataset(valid_data3, label_calibration)
-valid_set4 = Dataset(valid_data4, label_calibration)
-valid_set5 = Dataset(valid_data5, label_calibration)
-valid_set6 = Dataset(valid_data6, label_calibration)
-valid_set7 = Dataset(valid_data7, label_calibration)
-valid_set8 = Dataset(valid_data8, label_calibration)
-valid_set9 = Dataset(valid_data9, label_calibration)
-valid_set10 = Dataset(valid_data10, label_calibration)
-valid_set11 = Dataset(valid_data11, label_calibration)
-valid_set12 = Dataset(valid_data12, label_calibration)
-valid_set13 = Dataset(valid_data13, label_calibration)
-valid_set14 = Dataset(valid_data14, label_calibration)
-valid_set15 = Dataset(valid_data15, label_calibration)
-valid_set16 = Dataset(valid_data16, label_calibration)
-valid_set17 = Dataset(valid_data17, label_calibration)
-valid_set18 = Dataset(valid_data18, label_calibration)
-valid_set19 = Dataset(valid_data19, label_calibration)
-valid_set20 = Dataset(valid_data20, label_calibration)
-valid_set21 = Dataset(valid_data21, label_calibration)
-valid_set22 = Dataset(valid_data22, label_calibration)
-valid_set23 = Dataset(valid_data23, label_calibration)
-valid_set24 = Dataset(valid_data24, label_calibration)
-valid_set25 = Dataset(valid_data25, label_calibration)
-valid_set26 = Dataset(valid_data26, label_calibration)
-valid_set27 = Dataset(valid_data27, label_calibration)
-valid_set28 = Dataset(valid_data28, label_calibration)
-valid_set29 = Dataset(valid_data29, label_calibration)
-valid_set30 = Dataset(valid_data30, label_calibration)
-valid_set31 = Dataset(valid_data31, label_calibration)
-valid_set32 = Dataset(valid_data32, label_calibration)
-
-valid_iter1 = data.DataLoader(valid_set1, batch_size, shuffle=True, num_workers = 0)
-valid_iter2 = data.DataLoader(valid_set2, batch_size, shuffle=True, num_workers = 0)
-valid_iter3 = data.DataLoader(valid_set3, batch_size, shuffle=True, num_workers = 0)
-valid_iter4 = data.DataLoader(valid_set4, batch_size, shuffle=True, num_workers = 0)
-valid_iter5 = data.DataLoader(valid_set5, batch_size, shuffle=True, num_workers = 0)
-valid_iter6 = data.DataLoader(valid_set6, batch_size, shuffle=True, num_workers = 0)
-valid_iter7 = data.DataLoader(valid_set7, batch_size, shuffle=True, num_workers = 0)
-valid_iter8 = data.DataLoader(valid_set8, batch_size, shuffle=True, num_workers = 0)
-valid_iter9 = data.DataLoader(valid_set9, batch_size, shuffle=True, num_workers = 0)
-valid_iter10 = data.DataLoader(valid_set10, batch_size, shuffle=True, num_workers = 0)
-valid_iter11 = data.DataLoader(valid_set11, batch_size, shuffle=True, num_workers = 0)
-valid_iter12 = data.DataLoader(valid_set12, batch_size, shuffle=True, num_workers = 0)
-valid_iter13 = data.DataLoader(valid_set13, batch_size, shuffle=True, num_workers = 0)
-valid_iter14 = data.DataLoader(valid_set14, batch_size, shuffle=True, num_workers = 0)
-valid_iter15 = data.DataLoader(valid_set15, batch_size, shuffle=True, num_workers = 0)
-valid_iter16 = data.DataLoader(valid_set16, batch_size, shuffle=True, num_workers = 0)
-valid_iter17 = data.DataLoader(valid_set17, batch_size, shuffle=True, num_workers = 0)
-valid_iter18 = data.DataLoader(valid_set18, batch_size, shuffle=True, num_workers = 0)
-valid_iter19 = data.DataLoader(valid_set19, batch_size, shuffle=True, num_workers = 0)
-valid_iter20 = data.DataLoader(valid_set20, batch_size, shuffle=True, num_workers = 0)
-valid_iter21 = data.DataLoader(valid_set21, batch_size, shuffle=True, num_workers = 0)
-valid_iter22 = data.DataLoader(valid_set22, batch_size, shuffle=True, num_workers = 0)
-valid_iter23 = data.DataLoader(valid_set23, batch_size, shuffle=True, num_workers = 0)
-valid_iter24 = data.DataLoader(valid_set24, batch_size, shuffle=True, num_workers = 0)
-valid_iter25 = data.DataLoader(valid_set25, batch_size, shuffle=True, num_workers = 0)
-valid_iter26 = data.DataLoader(valid_set26, batch_size, shuffle=True, num_workers = 0)
-valid_iter27 = data.DataLoader(valid_set27, batch_size, shuffle=True, num_workers = 0)
-valid_iter28 = data.DataLoader(valid_set28, batch_size, shuffle=True, num_workers = 0)
-valid_iter29 = data.DataLoader(valid_set29, batch_size, shuffle=True, num_workers = 0)
-valid_iter30 = data.DataLoader(valid_set30, batch_size, shuffle=True, num_workers = 0)
-valid_iter31 = data.DataLoader(valid_set31, batch_size, shuffle=True, num_workers = 0)
-valid_iter32 = data.DataLoader(valid_set32, batch_size, shuffle=True, num_workers = 0)
 
 
 #starting mlp
@@ -500,36 +272,8 @@ def init_weights(m):
 net.apply(init_weights);
 
 
-'''
-num_inputs, num_outputs, num_hiddens = 12, 2, 1000
-seed = 1
-torch.manual_seed(seed)
-W1 = nn.Parameter(torch.randn(num_inputs, num_hiddens, requires_grad=True) * 0.01)
-b1 = nn.Parameter(torch.zeros(num_hiddens, requires_grad=True))
-W2 = nn.Parameter(torch.randn(num_hiddens, num_outputs, requires_grad=True) * 0.01)
-b2 = nn.Parameter(torch.zeros(num_outputs, requires_grad=True))
-params = [W1, b1, W2, b2]
-'''
-
-'''
-def net(X):   #using sigmoid function
-    X = X.reshape((-1, num_inputs))
-    H = torch.sigmoid(X @ W1 + b1)
-    return (H @ W2 + b2)
-def net(X):
-    X = X.reshape((-1, num_inputs))
-    H = relu(X @ W1 + b1)
-    return (H @ W2 + b2)
-'''
-
-#loss = nn.KLDivLoss()
 loss = nn.BCEWithLogitsLoss()
-#def loss(y_hat, y):  #@save
-#    """Squared loss."""
-#    return (y_hat - y.reshape(y_hat.shape)) ** 2 / 2
 #loss = nn.CrossEntropyLoss()
-#def cross_entropy(y_hat, y):
-#    return -torch.log(y_hat[range(len(y_hat)), y])
 
 
 class Accumulator:  #@save
@@ -605,21 +349,13 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
     for X, y in train_iter:
         # Compute gradients and update parameters
         y_hat = net.forward(X)
-        #print(X)
-        #print(y_hat.size())
-        #print(y)
-        l = loss(y_hat, y)
-        #print(float(l))
-        #print(l)
-        #break
+        l = loss(y_hat, y)      
         if isinstance(updater, torch.optim.Optimizer):
             # Using PyTorch in-built optimizer & loss criterion
             updater.zero_grad()
             l.backward()
             updater.step()
-            #print("add metric")
             metric.add(float(l) * len(y), accuracy(y_hat, y), y.numel())
-            #print(metric[1])
         else:
             # Using custom built optimizer & loss criterion
             l.sum().backward()
@@ -734,16 +470,10 @@ def roc_curve(signal_output, background_output, m):
 
     # if signal is lower, roc[0] is signal efficiency
     return roc[:,0], roc[:,1] 
-'''
-    plt.xlabel('signal efficiency')
-    plt.ylabel('background rejection')
-    plt.plot(roc[:,1], roc[:,0],lw=2,label='')
-    #plt.legend()
-    plt.show()
-'''
 
 
-num_epochs, lr = 150, 0.05
+
+num_epochs, lr = 100, 0.05
 updater = torch.optim.SGD(net.parameters(), lr=lr)
 
 print('check')
@@ -753,214 +483,20 @@ valid_ch3(net, valid_iter)
 #valid_ch3(net, valid_iter_cal)
 #valid_ch3(net, valid_iter_back)
 
-#output_cal = valid_roc(net, valid_iter_cal, 20000)
-#output_back = valid_roc(net, valid_iter_back, 20000)
+output_cal = valid_roc(net, valid_iter_cal, 20000)
+output_back = valid_roc(net, valid_iter_back, 20000)
 
-'''
+
 plt.xlabel('output (neuron 0)')
 plt.ylabel('event number #')
 plt.hist(output_back[0],100,alpha = 0.5, lw=2, label='background')
 plt.hist(output_cal[0],100,alpha = 0.5, lw=2, label='signal_all_calibration')
 plt.legend()
-plt.savefig('validation_mlp_output0_all_cal_2')
 plt.show()
+
 plt.xlabel('output (neuron 1)')
 plt.ylabel('event number #')
 plt.hist(output_back[1],100,alpha = 0.5, lw=2, label= 'background')
 plt.hist(output_cal[1],100,alpha = 0.5, lw=2, label= 'signal_all_calibration')
 plt.legend()
-plt.savefig('validation_mlp_output1_all_cal_2')
 plt.show()
-all = roc_curve(output_cal[0], output_back[0],13)
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(all[1], all[0],c='b',lw=1,label='mlp-all energy')
-plt.legend()
-plt.savefig('roc_curve_all_calib_2')
-plt.show()
-'''
-# plot Comparison of raw CDL logL data with logL data remaining after preprocessing cuts are applied
-l_nocut = [likeli_ag_nocut, likeli_al_nocut, likeli_c_nocut, likeli_cu1_nocut, likeli_cu2_nocut, likeli_cn_nocut, likeli_mc_nocut, likeli_ti_nocut]
-l_cut = [likeli_ag, likeli_al, likeli_c, likeli_cu09, likeli_cu2, likeli_cn, likeli_mc, likeli_ti]
-l_name = ['Ag-Ag-6kV', 'Al-Al-4kV', 'C-EPIC-06kV', 'Cu-EPIC-09kV', 'Cu-EPIC-2kV', 'Cu-Ni-15kV', 'Mn-Cr-12kV', 'Ti-Ti-9kV']
-def compare_LogL(cut, nocut, name):
-    for i,j,n in zip(cut, nocut, name):
-        likeli = i[np.where(np.isfinite(i))[0]]
-        likeli_nocut = j[np.where(np.isfinite(j))[0]]
-        plt.figure()
-        plt.xlabel('LogL')
-        plt.ylabel('event number #')
-        plt.title(n)
-        plt.hist(likeli_nocut,100,color='r',alpha = 0.5, lw=2, label='LogL_nocut')
-        plt.hist(likeli,100,color='b',alpha = 0.5, lw=2, label='LogL')
-        plt.legend()
-        plt.savefig('comparison_cdl_logL_data_' + n)
-        #plt.show()
-    return 0
-
-#compare_LogL(l_cut, l_nocut, l_name)
-
-
-# create and plot roc curves for all cdl data with LogL data
-likeli_back = np.clip(likeli_back,0,50)
-
-def plot_roc_curve_with_logL(likeli, valid_iter, name):
-    likeli = likeli[np.where((likeli < 40) & (likeli > 0))[0]]
-    output_cal = valid_roc(net, valid_iter, num_vset)
-    output_back = valid_roc(net, valid_iter_back, num_vset)
-    roc_cdl = roc_curve(output_cal[0], output_back[0], 13)
-    roc_likeli = roc_curve(likeli, likeli_back, 44)
-    #plt.figure()
-    #plt.hist(output_cal[0],100,color='r',alpha=0.5, lw=2, label='LogL_ag')
-    #plt.hist(output_back[0],100,color='b',alpha=0.5, lw=2, label='LogL_back')
-    #plt.show()
-    #plt.figure()
-    #plt.xlabel('signal efficiency')
-    #plt.ylabel('background rejection')
-    #plt.plot(roc_likeli[1], roc_likeli[0],c='b',lw=2,label='LogL')
-    #plt.plot(roc_cdl[1], roc_cdl[0],c='r',lw=2,label='mlp')
-    #plt.legend()
-    #plt.savefig('roc_curve_with_logL_'+name)
-    #plt.show()
-    return roc_likeli[0], roc_likeli[1], roc_cdl[0], roc_cdl[1]
-
-l_val = [valid_iter_ag, valid_iter_al, valid_iter_c, valid_iter_cu1, valid_iter_cu2, 
-        valid_iter_cn, valid_iter_mc, valid_iter_ti]
-#for i,j,n in zip(l_cut, l_val, l_name):
-#    plot_roc_curve_with_logL(i, j, n)
-
-ti = plot_roc_curve_with_logL(likeli_ti ,valid_iter_ti,'Ti-Ti-9kV')
-ag = plot_roc_curve_with_logL(likeli_ag ,valid_iter_ag,'Ag-Ag-6kV')
-
-al = plot_roc_curve_with_logL(likeli_al ,valid_iter_al,'Al-Al-4kV')
-c = plot_roc_curve_with_logL(likeli_c,valid_iter_c,'C-EPIC-06kV')
-cu1 = plot_roc_curve_with_logL(likeli_cu09 ,valid_iter_cu1,'Cu-EPIC-09kV')
-cu2 = plot_roc_curve_with_logL(likeli_cu2 ,valid_iter_cu2,'Cu-EPIC-2kV')
-
-cn = plot_roc_curve_with_logL(likeli_cn ,valid_iter_cn,'Cu-Ni-15kV')
-mc = plot_roc_curve_with_logL(likeli_mc ,valid_iter_mc,'Mn-Cr-12kV')
-
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(ag[1], ag[0],c='b',lw=1,label='LogL')
-plt.plot(ag[3], ag[2],c='b',linestyle='--',lw=1,label='mlp-Ag-6')
-plt.legend()
-plt.savefig('roc_curve_with_logL_ag')
-plt.show()
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(al[1], al[0],c='r',lw=1,label='LogL')
-plt.plot(al[3], al[2],c='r',linestyle='--',lw=1,label='mlp-Al-4')
-plt.legend()
-plt.savefig('roc_curve_with_logL_al')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(c[1], c[0],c='g',lw=1,label='LogL')
-plt.plot(c[3], c[2],c='g',linestyle='--',lw=1,label='mlp-C-0.6')
-plt.legend()
-plt.savefig('roc_curve_with_logL_c')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(cu1[1], cu1[0],c='m',lw=1,label='LogL')
-plt.plot(cu1[3], cu1[2],c='m',linestyle='--',lw=1,label='mlp-Cu-0.9')
-plt.legend()
-plt.savefig('roc_curve_with_logL_cu1')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(cu2[1], cu2[0],c='c',lw=1,label='LogL')
-plt.plot(cu2[3], cu2[2],c='c',linestyle='--',lw=1,label='mlp-Cu-2')
-plt.legend()
-plt.savefig('roc_curve_with_logL_cu2')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(cn[1], cn[0],c='y',lw=1,label='LogL')
-plt.plot(cn[3], cn[2],c='y',linestyle='--',lw=1,label='mlp-Cu-Ni-15')
-plt.legend()
-plt.savefig('roc_curve_with_logL_cu_ni')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(mc[1], mc[0],c='tab:brown',lw=1,label='LogL')
-plt.plot(mc[3], mc[2],c='tab:brown',linestyle='--',lw=1,label='mlp-Mn-Cr-12')
-plt.legend()
-plt.savefig('roc_curve_with_logL_mn_cr')
-
-plt.figure()
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(ti[1], ti[0],c='k',lw=1,label='LogL')
-plt.plot(ti[3], ti[2],c='k',linestyle='--',lw=1,label='mlp-Ti-9')
-plt.legend()
-plt.savefig('roc_curve_with_logL_ti')
-
-#plt.legend()
-#plt.savefig('roc_curve_with_logL_all_44')
-#plt.show()
-
-
-'''
-#likeli_Ag = likeli_Ag[np.where(np.isfinite(likeli_Ag))[0]]
-#likeli_ag = likeli_ag[np.where((likeli_ag < 40) & (likeli_ag > 0))[0]]
-#likeli_back = likeli_back[np.where(np.isfinite(likeli_back))[0]]
-#likeli_back = likeli_back[np.where((likeli_back < 40) & (likeli_back > 0))[0]]
-#roc_Ag = roc_curve(output_cal[0], output_back[0], 13)
-likeli_ag = likeli_ag[np.where((likeli_ag < 40) & (likeli_ag > 0))[0]]
-likeli_ag_nocut = likeli_ag_nocut[np.where((likeli_ag_nocut < 40) & (likeli_ag_nocut > 0))[0]]
-roc_likeli = roc_curve(likeli_ag_nocut, likeli_back, 50)
-roc_likeli_c = roc_curve(likeli_ag, likeli_back, 50)
-plt.xlabel('signal efficiency')
-plt.ylabel('background rejection')
-plt.plot(roc_likeli[1], roc_likeli[0],c='b',lw=2,label='LogL_nocut')
-plt.plot(roc_likeli_c[1], roc_likeli_c[0],c='r',lw=2,label='LogL')
-plt.legend()
-plt.show()
-'''
-
-
-
-
-
-
-
-# Accuracy-Energieverteilung
-'''
-l = [valid_iter1, valid_iter2, valid_iter3, valid_iter4, valid_iter5, valid_iter6, 
-valid_iter7, valid_iter8, valid_iter9, valid_iter10, valid_iter11, valid_iter12
-, valid_iter13, valid_iter14, valid_iter15, valid_iter16, valid_iter17, valid_iter18
-, valid_iter19, valid_iter20, valid_iter21, valid_iter22
-, valid_iter23, valid_iter24, valid_iter25, valid_iter26, valid_iter27, valid_iter28
-, valid_iter29, valid_iter30, valid_iter31, valid_iter32
-]
-acc = np.empty(shape=(32,)) 
-energy = np.linspace(0.125, 7.875, 32)
-for i,j in zip(range(32), l):
-    acc[i] = valid_ch3(net, j) 
-plt.grid(axis='both', linestyle='--', linewidth=1)
-plt.xlabel('E (energyFromCharge) / keV')
-plt.ylabel('Accuracy')    
-plt.plot(energy, acc, lw=2, label='')
-plt.show()
-'''
