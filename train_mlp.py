@@ -30,10 +30,9 @@ def readDatasets(h5f, path):
     data_list = [np.array(h5f.get(path + dset)).flatten() for dset in datasets]
     return np.array(data_list).transpose()
 
-calib_dsets_Ag_n = readDatasets(hf, 'calibration-cdl-feb2019-Ag-Ag-6kV/')
-
 
 # datasets with different energy
+calib_dsets_Ag_n = readDatasets(hf, 'calibration-cdl-feb2019-Ag-Ag-6kV/')
 calib_dsets_Cu2_n = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-2kV/')
 calib_dsets_Cu09_n = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-0.9kV/')
 calib_dsets_Al_n = readDatasets(hf, 'calibration-cdl-feb2019-Al-Al-4kV/')
@@ -73,22 +72,17 @@ df = pd.DataFrame(calib_dsets,
                    'eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot'
-                   ])
-
+                   ,'rot'])
 dfc_cut = df[ ((df['eccen']>1) & (df['eccen']<5)) & ((df['eFC']>0) & (df['eFC']<15)) &
               ((df['kL']>-2) & (df['kL']<5)) & ((df['kT']>-2) & (df['kT']<4)) & ((df['len']>0) & (df['len']<14)) &
               ((df['sL']>-2) & (df['sL']<2)) & ((df['sT']>-2) & (df['sT']<2)) & ((df['frac']>0) & (df['frac']<0.5)) &
               #((df['hits']>0) & (df['hits']<500)) & 
               ((df['rmsL']>0) & (df['rmsL']<4)) &
               ((df['rmsT']>0) & (df['rmsT']<2)) &
-                ((df['rot']>-0.1) & (df['rot']<3.5))
-            ]
-
+                ((df['rot']>-0.1) & (df['rot']<3.5))]
 dfc_cut = dfc_cut.drop('eFC', axis=1)
 dfc_cut = dfc_cut.drop('likelihood', axis=1)
 
-#print(dfc_cut)
 
 
 # background data cut
@@ -96,8 +90,7 @@ dfb = pd.DataFrame(background_dsets,
                    columns=['eccen','eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot'
-                   ])
+                   ,'rot'])
 
 dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & #((dfb['eFC']>0.0) & (dfb['eFC']<5)) &
                ((dfb['kL']>-2) & (dfb['kL']<4)) & ((dfb['kT']>-2) & (dfb['kT']<4)) &
@@ -106,18 +99,15 @@ dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & #((dfb['eFC']>0.0) & (
                #((dfb['hits']>0) & (dfb['hits']<500)) & 
                ((dfb['rmsL']>0) & (dfb['rmsL']<5)) &
                ((dfb['rmsT']>0) & (dfb['rmsT']<2)) ]
-
 dfb_cut = dfb_cut.drop('eFC', axis=1)
 
-# validation data cut
 
+# validation data cut
 dfv = pd.DataFrame(calib_dsets,
                     columns=['eccen','eFC',
                     'kL','kT','len','sL','sT','frac',#'hits',
                     'rmsL','rmsT'
-                    ,'rot'
-                    ])
-
+                    ,'rot'])
 dfv_cut = dfv[ ((dfv['eccen']>0.0) & (dfv['eccen']<5)) & #((dfv['eFC']>0.0) & (dfv['eFC']<15)) &
                ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) &
                ((dfv['len']>0) & (dfv['len']<18)) & ((dfv['sL']>-2) & (dfv['sL']<2)) &
@@ -125,35 +115,7 @@ dfv_cut = dfv[ ((dfv['eccen']>0.0) & (dfv['eccen']<5)) & #((dfv['eFC']>0.0) & (d
                #((dfv['hits']>0) & (dfv['hits']<500)) & 
                ((dfv['rmsL']>0) & (dfv['rmsL']<5)) &
                ((dfv['rmsT']>0) & (dfv['rmsT']<2)) ]
-
-'''
-# get LogL data which passed through cut 
-df_LogL = dfv_cut['likelihood']
-likeli_Ag = df_LogL.to_numpy().astype(np.float32)
-'''
 dfv_cut = dfv_cut.drop('eFC', axis=1)
-
-
-# cut for validation and LogL 
-def validation_cut(calib_dsets):
-    dfv = pd.DataFrame(calib_dsets,
-                    columns=['eccen','eFC',
-                    'kL','kT','len','sL','sT','frac',#'hits',
-                    'rmsL','rmsT'
-                    ,'rot'
-                    ])
-
-    dfv_cut = dfv[  ((dfv['eccen']>1) & (dfv['eccen']<2.5)) & #((dfv['eFC']>0) & (dfv['eFC']<15)) &
-              ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) & ((dfv['len']>0) & (dfv['len']<14)) &
-              ((dfv['sL']>-2) & (dfv['sL']<2)) & ((dfv['sT']>-2) & (dfv['sT']<2)) & ((dfv['frac']>0) & (dfv['frac']<0.5)) &
-              #((df['hits']>0) & (df['hits']<500)) & 
-              ((dfv['rmsL']>0) & (dfv['rmsL']<4)) &
-              ((dfv['rmsT']>0) & (dfv['rmsT']<2)) & ((dfv['rot']>-0.1) & (dfv['rot']<3.5))  ]
-
-    dfv_cut = dfv_cut.drop('eFC', axis=1)
-
-    return dfv_cut.to_numpy().astype(np.float32)
-
 
 
 def shuffleAndFilter(t):
@@ -317,8 +279,6 @@ def evaluate_accuracy(net, data_iter):  #@save
 def accuracy_validation_roc(net, data_iter, set_length):
     if isinstance(net,torch.nn.Module):
         net.eval()
-    #tn0 = np.empty(shape=(len(valid_set),))
-    #tp1 = np.empty(shape=(len(valid_set),))
     res = np.empty(shape=(set_length,2))
     batch_idx = 0
     correct = 0
@@ -328,9 +288,6 @@ def accuracy_validation_roc(net, data_iter, set_length):
             y_hat = net.forward(X)  
             pred = y_hat.argmax(1)
             correct += pred.eq(y.argmax(1)).sum()
-            #max_value = torch.max(y_hat)
-            #tn0[batch_idx * batch_size : (batch_idx + 1) * batch_size] = y_hat[][0] 
-            #tp1[batch_idx * batch_size : (batch_idx + 1) * batch_size] = y_hat[][1]
             res[batch_idx * batch_size : (batch_idx + 1) * batch_size, :] = y_hat 
             batch_idx = batch_idx + 1
 
@@ -396,7 +353,7 @@ def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
     plt.plot(x, y_train_acc, 'r', lw=2, label='train_accuracy')
     plt.plot(x, y_test_acc, 'b', lw=2, label='test_accuracy')
     plt.legend()
-    #plt.savefig('mlp_acc_70000')
+    #plt.savefig('mlp_acc')
     plt.show()
 
     plt.figure()
@@ -404,7 +361,7 @@ def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
     plt.ylabel('loss')
     plt.plot(x, y_loss, lw=2, label='loss')
     plt.legend()
-    #plt.savefig('mlp_loss_70000')
+    #plt.savefig('mlp_loss')
     plt.show()   
 
 
@@ -413,64 +370,13 @@ def valid_ch3(net, valid_iter):
     print('Validation Accuracy:', valid_acc[1])
     return valid_acc[1]
 
-def valid_roc(net, valid_iter, set_length):
+def valid_output_dist(net, valid_iter, set_length):
     valid_acc = accuracy_validation_roc(net, valid_iter, set_length)
     print('Validation Accuracy:', valid_acc[0])
     res = valid_acc[1]
     res0 = res[:,0]
     res1 = res[:,1]
     return res0, res1
-
-
-# calculate roc-curve
-def roc_curve(signal_output, background_output, m):
-    back = background_output # use second neuron outputs
-    signal = signal_output
-    back = sorted(back)
-    signal = sorted(signal)
-    #print(len(back), len(signal))
-    min_b = np.min(back) 
-    max_b = np.max(back)
-    min_s = np.min(signal)
-    max_s = np.max(signal)
-
-    if min_b < min_s:
-        min = min_b
-    else:
-        min = min_s
-
-    if max_b < max_s:
-        max = max_s
-    else:
-        max = max_b
-
-    if m == 44:
-        max = 44
-
-    num_bin = 1000
-    bin_intervall = (max + abs(min)) / num_bin 
-    #print(max)
-    #print(min)
-    roc = np.empty(shape=(num_bin,2))
-    cut_idx_b = 0
-    cut_idx_s = 0
-    for i in range(num_bin):
-        cut = min + i * bin_intervall
-        for j in range(cut_idx_b ,len(back)):
-            if back[j] >= cut:
-                roc[i,0] = 1 - ((j-1) / len(back))
-                cut_idx_b = j
-                break
-        for n in range(cut_idx_s ,len(signal)):
-            if signal[n] >= cut:
-                cut_idx_s = n
-                break
-        roc[i,1] = (cut_idx_s-1) / len(signal)
-    #print(roc[0,:])
-
-    # if signal is lower, roc[0] is signal efficiency
-    return roc[:,0], roc[:,1] 
-
 
 
 num_epochs, lr = 100, 0.05
@@ -483,8 +389,8 @@ valid_ch3(net, valid_iter)
 #valid_ch3(net, valid_iter_cal)
 #valid_ch3(net, valid_iter_back)
 
-output_cal = valid_roc(net, valid_iter_cal, 20000)
-output_back = valid_roc(net, valid_iter_back, 20000)
+output_cal = valid_output_dist(net, valid_iter_cal, 20000)
+output_back = valid_output_dist(net, valid_iter_back, 20000)
 
 
 plt.xlabel('output (neuron 0)')
