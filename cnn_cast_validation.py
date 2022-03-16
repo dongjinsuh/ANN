@@ -6,11 +6,9 @@ from torch import nn
 import time 
 import h5py
 import numpy as np
-#import random 
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
-#from d2l import torch as d2l
 #TimePix10mu
 
 # load data from h5py file
@@ -36,7 +34,6 @@ def readDatasets(h5f, path):
     return np.array(data_list).transpose()
 
 calib_dsets_Ag = readDatasets(hf, 'calibration-cdl-feb2019-Ag-Ag-6kV/')
-
 calib_dsets_Cu2 = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-2kV/')
 calib_dsets_Cu09 = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-0.9kV/')
 calib_dsets_Al = readDatasets(hf, 'calibration-cdl-feb2019-Al-Al-4kV/')
@@ -51,17 +48,6 @@ def readxyDatasets(h5f, path):
     data = np.array(h5f.get(path))
     return data
 
-#c1 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/x')
-#c2 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/y')
-#c3 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/charge')
-
-#cal_x = np.array(c1)
-#cal_y = np.array(c2)
-#cal_charge = np.array(c3)
-
-#b1 = hf_rec.get('reconstruction/run_186/chip_3/x')
-#b2 = hf_rec.get('reconstruction/run_186/chip_3/y')
-#b3 = hf_rec.get('reconstruction/run_186/chip_3/charge')
 
 b_x = readxyDatasets(hf_rec, 'reconstruction/run_186/chip_3/x')
 b_y =readxyDatasets(hf_rec, 'reconstruction/run_186/chip_3/y')
@@ -102,15 +88,7 @@ ti_x = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/x')
 ti_y = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/y')
 ti_charge = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/charge')
 
-# save calibration data
-#cal_x = ag_x
-#cal_y = ag_y
-#cal_charge = ag_charge
 
-#background data
-#b_x = np.array(b1)
-#b_y = np.array(b2)
-#b_charge = np.array(b3)
 
 # load likelihood values
 likeli_ag_nocut = np.array(hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/likelihood'))
@@ -267,16 +245,8 @@ def setupCalibration(b, xdata, ydata, chargedata):
     return dataset_cal
 
 dataset_calibration = setupCalibration(datacut(calib_dsets), x_dsets, y_dsets, charge_dsets)
-#dataset_cal_al = setupCalibration(datacut(calib_dsets_Al), al_x, al_y, al_charge)
-#dataset_cal_c = setupCalibration(datacut(calib_dsets_C), c_x, c_y, c_charge)
-#dataset_cal_cu1 = setupCalibration(datacut(calib_dsets_Cu09), cu1_x, cu1_y, cu1_charge)
-#dataset_cal_cn = setupCalibration(datacut(calib_dsets_Cu_Ni), cn_x, cn_y, cn_charge)
 
-#print(dataset_cal[11000][0][150][170])
 
-#dataset_calibration = np.concatenate((dataset_cal_ag, dataset_cal_al, dataset_cal_c, dataset_cal_cu1)
-#                                      ,axis=0) 
-#dataset_calibration = dataset_cal_ag
 
 for j in range(num_data_back):
     charge = b_charge[j+5000][0]
@@ -288,15 +258,6 @@ for j in range(num_data_back):
 
 dataset_calibration = dataset_calibration.astype(np.float32)
 dataset_background = dataset_background.astype(np.float32)
-
-#print(dataset_cal.shape)
-#print(dataset_background.shape)
-'''
-dataset_cal = np.expand_dims(dataset_cal, axis=0) 
-dataset_cal = np.expand_dims(dataset_cal, axis=0) 
-dataset_background = np.expand_dims(dataset_background, axis=0) 
-dataset_background = np.expand_dims(dataset_background, axis=0) 
-'''
 
 
 #shuffle the data random
@@ -488,7 +449,8 @@ valid_set_low = Dataset(valid_data_low, label_calibration)
 valid_iter_low = data.DataLoader(valid_set_low, batch_size, shuffle=True, num_workers=0)
 '''
 
-# define some necessary classes and functions
+
+### define some necessary classes and functions
 
 def get_dataloader_workers():  #@save
     """Use # processes to read the data."""
@@ -570,20 +532,10 @@ net = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2),
                     nn.Conv2d(1, 1, kernel_size=5, padding=2), nn.Tanh(),
                     nn.MaxPool2d(kernel_size=2, stride=2),
                     nn.Conv2d(1, 1, kernel_size=5, padding=2), nn.Tanh(), 
-                    #nn.MaxPool2d(kernel_size=2, stride=2),
-                    #nn.Conv2d(1, 1, kernel_size=5), nn.Tanh(),
                     nn.Flatten(),
                     nn.Linear(1024, 300), nn.Tanh(),
-                    #nn.Linear(144, 30), nn.Tanh(),
                     nn.Linear(300, 30), nn.Tanh(), 
                     nn.Linear(30, 2))
-
-'''
-X = torch.rand(size=(1, 1, 256, 256), dtype=torch.float32)
-for layer in net:
-    X = layer(X)
-    print(layer.__class__.__name__, 'output shape: \t', X.shape)
-'''
 
 
 def evaluate_accuracy_gpu(net, data_iter, device=None):  #@save
@@ -688,8 +640,6 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
         y_loss[epoch] = train_l 
         y_train_acc[epoch] = train_acc 
         y_test_acc[epoch] = test_acc[1]
-        #if (epoch > 10 and train_l > 0.25):
-        #    break 
 
     print(f'loss {train_l:.3f}, train acc {train_acc:.3f}, '
           f'test acc {test_acc[1]:.3f}')
@@ -702,7 +652,7 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
     plt.plot(x, y_train_acc, 'r', lw=2, label='train_acc')
     plt.plot(x, y_test_acc, 'b', lw=2, label='test_acc')
     plt.legend()
-    #plt.savefig('cnn_acc_xx')
+    #plt.savefig('cnn_acc_')
     plt.show()
 
 
@@ -727,7 +677,6 @@ def roc_curve(signal_output, background_output, m):
     signal = signal_output
     back = sorted(back)
     signal = sorted(signal)
-    #print(len(back), len(signal))
     min_b = np.min(back) 
     max_b = np.max(back)
     min_s = np.min(signal)
@@ -751,7 +700,6 @@ def roc_curve(signal_output, background_output, m):
     #print(max)
     #print(min)
     roc = np.empty(shape=(num_bin,2))
-    #print(roc[400:600,0])
     cut_idx_b = 0
     cut_idx_s = 0
     for i in range(num_bin):
@@ -766,45 +714,25 @@ def roc_curve(signal_output, background_output, m):
                 cut_idx_s = n
                 break
         roc[i,1] = (cut_idx_s-1) / len(signal)
-    #print(roc[400:600,0])
 
     # if signal is lower, roc[0] is signal efficiency
     return roc[:,0], roc[:,1] 
-'''
-    plt.xlabel('signal efficiency')
-    plt.ylabel('background rejection')
-    plt.plot(roc[:,1], roc[:,0],lw=2,label='')
-    #plt.legend()
-    plt.show()
-'''
+
 
 #zoom the roc curve 
 def zoom_roc(dset):
     dd = np.array( [dset[0], dset[1]] )
-    #print(dd)
-    #dd = dd.transpose()
     dx = pd.DataFrame(dd
-                     #,index = ["1", "2"]
-                    )
-    #print(d1)
+                     #,index = ["1", "2"])
     dx = dx.transpose()
     dx = dx.to_numpy().astype(np.float32)
-    #print(dx)
     d1 = pd.DataFrame(dx
-                     ,columns = ["one", "two"]
-                    )
-    #print(d1)
+                     ,columns = ["one", "two"])
     d1_cut = d1[  ((d1['one']>0.59) & (d1['one']<1.1)) & 
-                ((d1['two']>0.44) & (d1['two']<1.1)) ]
-
-    #d_cut = d_cut.transpose()
-    d1_cut = d1_cut.transpose()
-    
+                ((d1['two']>0.44) & (d1['two']<1.1)) 
+    d1_cut = d1_cut.transpose()  
     d1_cut = d1_cut.to_numpy().astype(np.float32)
-    #d1_cut.transpose()
-    #print(d1_cut[0])
-    
-
+  
     return d1_cut
 
 
@@ -814,9 +742,6 @@ print('check')
 
 train_ch6(net, train_iter, test_iter, num_epochs, lr, try_gpu())
 valid_ch6(net, valid_iter)
-#valid_ch6(net, valid_iter_ag)
-#valid_ch6(net,valid_iter_cn)
-#valid_ch6(net, valid_iter_cu1)
 #valid_ch6(net, valid_iter_cal)
 #valid_ch6(net, valid_iter_back)
 #valid_ch6(net, valid_iter_high)
@@ -827,14 +752,8 @@ num_vset = num_data_val
 
 #output_cal = valid_roc(net, valid_iter_cal, num_vset)
 #output_back = valid_roc(net, valid_iter_back, num_vset)
-#ox = output_back[0]
-#print(ox.shape)
-#print(ox[500:530])
 
-#output_cal_0 = output_cal[0][np.where((output_cal[0] < 0.5) & (output_cal[0] > -0.5))[0]]
-#output_back_0 = output_back[0][np.where((output_back[0] < 0.5) & (output_back[0] > -0.5))[0]]
 
-'''
 plt.figure()
 plt.xlabel('output (neuron 0)')
 plt.ylabel('event number #')
@@ -842,9 +761,7 @@ plt.hist(output_back[0],100,alpha = 0.5, lw=2, label='background')
 plt.hist(output_cal[0],100,alpha = 0.5, lw=2, label='signal_calibration all')
 plt.legend()
 plt.savefig('output0_valid_all_cnn')
-#plt.savefig('output0_distribution_all_100epoch_cnn_valid_new')
 plt.show()
-
 plt.figure()
 plt.xlabel('output (neuron 1)')
 plt.ylabel('event number #')
@@ -852,10 +769,8 @@ plt.hist(output_back[1],100,alpha = 0.5, lw=2, label= 'background')
 plt.hist(output_cal[1],100,alpha = 0.5, lw=2, label= 'signal_calibration all')
 plt.legend()
 plt.savefig('output1_valid_all_cnn')
-#plt.savefig('output1_distribution_all_100epoch_cnn_valid_new')
 plt.show()
-'''
-'''
+
 all = roc_curve(output_cal[0], output_back[0], 4.5)
 plt.figure()
 plt.grid(axis='both', linestyle='--',linewidth=1)
@@ -866,7 +781,7 @@ plt.legend()
 plt.savefig('roc_curve_cnn_valid_all')
 plt.show()
 
-
+'''
 output_high = valid_roc(net, valid_iter_high, 5000)
 output_low = valid_roc(net, valid_iter_low, 5000)
 output_back = valid_roc(net, valid_iter_back, 5000)
@@ -879,8 +794,6 @@ plt.hist(output_high[0],100,alpha = 0.5, lw=2, label='signal_calibration high en
 plt.legend()
 plt.savefig('cnn_output_trainall_validhigh_0')
 plt.show()
-
-
 plt.figure()
 plt.xlabel('output (neuron 1)')
 plt.ylabel('event number #')
@@ -898,9 +811,6 @@ plt.hist(output_low[0],100,alpha = 0.5, lw=2, label='signal_calibration low ener
 plt.legend()
 plt.savefig('cnn_output_trainall_validlow_0')
 plt.show()
-
-
-
 plt.figure()
 plt.xlabel('output (neuron 1)')
 plt.ylabel('event number #')
@@ -914,7 +824,6 @@ plt.show()
 low = zoom_roc(roc_curve(output_low[0], output_back[0], 13))
 high = zoom_roc(roc_curve(output_high[0], output_back[0], 13))
 
-
 plt.figure()
 plt.grid(axis='both', linestyle='--',linewidth=1)
 plt.xlabel('signal efficiency')
@@ -926,91 +835,33 @@ plt.savefig('roc_curve_cnn_with_logL_train_high_energy1_zoom')
 plt.show()
 '''
 
-# plot Comparison of raw CDL logL data with logL data remaining after preprocessing cuts are applied
-l_nocut = [likeli_ag_nocut, likeli_al_nocut, likeli_c_nocut, likeli_cu1_nocut, likeli_cu2_nocut, likeli_cn_nocut, likeli_mc_nocut, likeli_ti_nocut]
+
+####
+ # create and plot roc curves for all cdl data with LogL data
 '''
-l_cut = [likeli_ag, likeli_al, likeli_c, likeli_cu09, likeli_cu2, likeli_cn, likeli_mc, likeli_ti]
-l_name = ['Ag-Ag-6kV', 'Al-Al-4kV', 'C-EPIC-06kV', 'Cu-EPIC-09kV', 'Cu-EPIC-2kV', 'Cu-Ni-15kV', 'Mn-Cr-12kV', 'Ti-Ti-9kV']
-def compare_LogL(cut, nocut, name):
-    for i,j,n in zip(cut, nocut, name):
-        likeli = i[np.where(np.isfinite(i))[0]]
-        likeli_nocut = j[np.where(np.isfinite(j))[0]]
-        plt.figure()
-        plt.xlabel('LogL')
-        plt.ylabel('event number #')
-        plt.title(n)
-        plt.hist(likeli_nocut,100,color='r',alpha = 0.5, lw=2, label='LogL_nocut')
-        plt.hist(likeli,100,color='b',alpha = 0.5, lw=2, label='LogL')
-        plt.legend()
-        plt.savefig('comparison_cdl_logL_data_' + n)
-        #plt.show()
-    return 0
-
-#compare_LogL(l_cut, l_nocut, l_name)
-'''
-
-
-
-
-
-# create and plot roc curves for all cdl data with LogL data
 likeli_back = np.clip(likeli_back,0,55)
-
 def plot_roc_curve_with_logL(likeli, valid_iter, name):
     likeli = likeli[np.where((likeli < 40) & (likeli > 0))[0]]
     output_cal = valid_roc(net, valid_iter, num_vset)
     output_back = valid_roc(net, valid_iter_back, num_vset)
     roc_cdl = roc_curve(output_cal[0], output_back[0], 8)
     roc_likeli = roc_curve(likeli, likeli_back, 44)
-    #plt.figure()
-    #plt.hist(likeli,100,color='r',alpha = 0.5, lw=2, label='LogL_ag')
-    #plt.hist(likeli_back,100,color='b',alpha = 0.5, lw=2, label='LogL_back')
-    #plt.savefig('likeli_distribution')
-    #plt.figure()
-    #plt.hist(output_cal[0],100,color='r',alpha = 0.5, lw=2, label='LogL_ag')
-    #plt.hist(output_back[0],100,color='b',alpha = 0.5, lw=2, label='LogL_back')
-    #plt.savefig('output_distribution')
-
-    #plt.xlabel('signal efficiency')
-    #plt.ylabel('background rejection')
-    #plt.plot(roc_likeli[1], roc_likeli[0],c='b',lw=2,label='LogL')
-    #plt.plot(roc_cdl[1], roc_cdl[0],c='r',lw=2,label='mlp')
-    #plt.legend()
-    #plt.savefig('roc_curve_with_logL_'+name)
-    #plt.show()
-
-    #l_0 = roc_likeli[np.where((roc_likeli[0] < 1.1) & (roc_likeli[0] > 0.7))[0]]
-    #l_1 = roc_likeli[1][np.where((roc_likeli[1] < 1.1) & (roc_likeli[1] > 0.7))[0]] 
-    #cdl_0 = roc_cdl[0][np.where((roc_cdl[0] < 1.1) & (roc_cdl[0] > 0.7))[0]]
-    #cdl_1 = roc_cdl[1][np.where((roc_cdl[1] < 1.1) & (roc_cdl[1] > 0.7))[0]]
-    #print(roc_cdl)
-
+                
     roc_cdl_z = zoom_roc(roc_cdl)
     roc_likeli_z = zoom_roc(roc_likeli)
-    #print(roc_cdl_z[0])
     
-    
-    #return l_0, l_1, cdl_0, cdl_1
     return roc_likeli_z[0], roc_likeli_z[1], roc_cdl_z[0], roc_cdl_z[1]
-
-#l_val = [valid_iter_ag, valid_iter_al, valid_iter_c, valid_iter_cu1, valid_iter_cu2, valid_iter_cn, valid_iter_mc, valid_iter_ti]
-#for i,j,n in zip(l_cut, l_val, l_name):
-#    plot_roc_curve_with_logL(i, j, n)
-
 
 
 ti = plot_roc_curve_with_logL(likeli_ti_nocut ,valid_iter_ti,'Ti-Ti-9kV')
-
 al = plot_roc_curve_with_logL(likeli_al_nocut ,valid_iter_al,'Al-Al-4kV')
 c = plot_roc_curve_with_logL(likeli_c_nocut, valid_iter_c,'C-EPIC-06kV')
 cu1 = plot_roc_curve_with_logL(likeli_cu1_nocut ,valid_iter_cu1,'Cu-EPIC-09kV')
 cu2 = plot_roc_curve_with_logL(likeli_cu2_nocut ,valid_iter_cu2,'Cu-EPIC-2kV')
 cn = plot_roc_curve_with_logL(likeli_cn_nocut ,valid_iter_cn,'Cu-Ni-15kV')
 mc = plot_roc_curve_with_logL(likeli_mc_nocut ,valid_iter_mc,'Mn-Cr-12kV')
-
 ag = plot_roc_curve_with_logL(likeli_ag_nocut ,valid_iter_ag,'Ag-Ag-6kV')
-
-#to = plot_roc_curve_with_logL(likeli_ag_nocut ,valid_iter_cal,'Ag-Ag-6kV')
+#to = plot_roc_curve_with_logL(likeli_ag_nocut ,valid_iter_cal)
 
 plt.figure()
 plt.grid(axis='both', linestyle='--',linewidth=1)
@@ -1024,25 +875,20 @@ plt.plot(al[3], al[2],c='r',linestyle='--',lw=1,label='mlp-Al-4')
 plt.plot(c[1], c[0],c='g',lw=1,label='')
 plt.plot(c[3], c[2],c='g',linestyle='--',lw=1,label='mlp-C-0.6')
 plt.plot(cu1[1], cu1[0],c='m',lw=1,label='')
-plt.plot(cu1[3], cu1[2],c='k',linestyle='--',lw=1,label='mlp-Ti-9') #cu09
+plt.plot(cu1[3], cu1[2],c='k',linestyle='--',lw=1,label='mlp-Ti-9') 
 plt.plot(cu2[1], cu2[0],c='c',lw=1,label='')
-plt.plot(cu2[3], cu2[2],c='y',linestyle='--',lw=1,label='mlp-Cu-Ni-15') #cu2
-
+plt.plot(cu2[3], cu2[2],c='y',linestyle='--',lw=1,label='mlp-Cu-Ni-15') 
 plt.plot(cn[1], cn[0],c='y',lw=1,label='')
-plt.plot(cn[3], cn[2],c='c',linestyle='--',lw=1,label='mlp-Cu-2')  #cn2
-
+plt.plot(cn[3], cn[2],c='c',linestyle='--',lw=1,label='mlp-Cu-2')  
 plt.plot(mc[1], mc[0],c='tab:brown',lw=1,label='')
 plt.plot(mc[3], mc[2],c='tab:brown',linestyle='--',lw=1,label='mlp-Mn-Cr-12')
 plt.plot(ti[1], ti[0],c='k',lw=1,label='')
-plt.plot(ti[3], ti[2],c='m',linestyle='--',lw=1,label='mlp-Cu-0.9') #ti
-
+plt.plot(ti[3], ti[2],c='m',linestyle='--',lw=1,label='mlp-Cu-0.9') 
 plt.legend()
-#plt.savefig('roc_curve_cnn_valid_all_zoom5')
-plt.savefig('test_roc_curve_with_logL_all_energy_cnn_test')
+plt.savefig('roc_curve_cnn_valid_all_zoom5')
 plt.show()
 
 
-'''
 plt.figure()
 plt.grid(axis='both', linestyle='--',linewidth=1)
 plt.xlabel('signal efficiency')
@@ -1129,7 +975,7 @@ plt.show()
 '''
 
 
-# Accuracy-Energieverteilung
+# accuracy-energy distribution
 '''
 l = [valid_iter1, valid_iter2, valid_iter3, valid_iter4, valid_iter5, valid_iter6, 
 valid_iter7, valid_iter8, valid_iter9, valid_iter10, valid_iter11, valid_iter12]
