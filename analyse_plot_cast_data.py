@@ -1,4 +1,3 @@
-from traceback import print_tb
 import torch
 import torchvision 
 from torch.utils import data
@@ -8,13 +7,11 @@ import numpy as np
 import math
 import h5py 
 import matplotlib.pyplot as plt
-#from matplotlib.colors import TwoSlopeNorm
 import seaborn as sns
 import pandas as pd
 
 hf = h5py.File('../Dongjin/Cast_IAXO_data/calibration-cdl-2018.h5')
 
-#print(hf.keys())
 
 g1 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/eccentricity')
 g2 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/energyFromCharge')
@@ -165,7 +162,6 @@ cn_rmsL = np.array(cn10)
 cn_rmsT = np.array(cn11)
 cn_rot = np.array(cn12)
 
-#print(cn_rot.shape)
 
 mc1 = hf.get('calibration-cdl-feb2019-Mn-Cr-12kV/eccentricity')
 mc2 = hf.get('calibration-cdl-feb2019-Mn-Cr-12kV/energyFromCharge')
@@ -239,50 +235,10 @@ g_charge = np.array(g16)
 g_centerX = np.array(g17) 
 g_centerY = np.array(g18)
 
-
 hf.close
-'''
-print(len(g_charge))
 
-#print(g_charge[50])
-ff = g_charge[50][0]
-ffx = g_x[50][0]
-ffy = g_y[50][0]
-print(ff.shape, ffx.shape, ffy.shape)
-#print(ff)
-#print(ffx)
-#print(ffy)
-
-num_data = 2
-
-dataset = np.empty(shape=(num_data,1,256,256))
-
-for j in range(num_data):
-    charge = g_charge[j+50][0]
-    x = g_x[j+50][0]
-    y = g_y[j+50][0]
-    for i in range(len(charge)):
-        dataset[j][0][x[i]][y[i]] = charge[i]
-        #print(pixel[183][208])
-
-
-print(dataset.shape)
-print(dataset[0][0][174][141])
-X = dataset[0][0]
-
-
-fig = plt.figure(figsize=(8,6))
-plt.xlabel('x[pixel]')
-plt.ylabel('y[pixel]')
-#norm = TwoSlopeNorm(vmin= -10,vcenter=0, vmax=7000)
-plt.pcolormesh(X,cmap="inferno")
-#plt.title("Plot 2D array")
-plt.colorbar(label='Charge[electrons]')
-plt.show()
-'''
 
 hf_rec = h5py.File('../Dongjin/Cast_IAXO_data/reco_186.h5')
-#chip_0
 r1 = hf_rec.get('reconstruction/run_186/chip_3/eccentricity')
 r2 = hf_rec.get('reconstruction/run_186/chip_3/energyFromCharge')
 r3 = hf_rec.get('reconstruction/run_186/chip_3/kurtosisLongitudinal')
@@ -298,7 +254,6 @@ r12 = hf_rec.get('reconstruction/run_186/chip_3/rotationAngle')
 r13 = hf_rec.get('reconstruction/run_186/chip_3/eventNumber')
 r14 = hf_rec.get('reconstruction/run_186/chip_3/centerX')
 r15 = hf_rec.get('reconstruction/run_186/chip_3/centerY')
-
 r16 = hf_rec.get('reconstruction/run_186/chip_3/x')
 r17 = hf_rec.get('reconstruction/run_186/chip_3/y')
 r18 = hf_rec.get('reconstruction/run_186/chip_3/charge')
@@ -324,51 +279,22 @@ r_charge = np.array(r18)
 
 hf_rec.close
 
-#ff = r_charge[50]
-#ffx = r_x[50][0]
-#ffy = r_y[50][0]
-#print(ff.shape, ffx.shape, ffy.shape)
-'''
-num_data = 2
 
-dataset_r = np.empty(shape=(num_data,1,256,256))
+####
 
-for j in range(num_data):
-    n = 18090
-    charge = r_charge[j+n][0]
-    x = r_x[j+n][0]
-    y = r_y[j+n][0]
-    for i in range(len(charge)):
-        dataset_r[j][0][x[i]][y[i]] = charge[i]
-        #print(pixel[183][208])
-
-
-
-#print(dataset_r[0][0][174][141])
-X = dataset_r[0][0]
 x =r_x[18090][0] 
 y =r_y[18090][0]
 C = r_charge[18090][0]
-
-#df = pd.DataFrame(X,columns=['x[pixel]','y[pixel]'])
-
 
 fig = plt.figure(figsize=(8,6))
 plt.xlabel('x[pixel]')
 plt.ylabel('y[pixel]')
 plt.xlim([0,256])
 plt.ylim([0,256])
-#norm = TwoSlopeNorm(vmin= -10,vcenter=0, vmax=7000)
-#plt.pcolormesh(X,cmap="inferno")
-#plt.title("Plot 2D array")
 plt.scatter(x,y, c=C, cmap='inferno',s=2)
 plt.colorbar(label='Charge[electrons]')
-#plt.show()
-#sns.scatterplot(data=df, x='x[pixel]', y='y[pixel]', hue='Charge[electrons]')
 plt.savefig('back_track_event18090')
 plt.show()
-
-
 
 
 xg =g_x[50][0] 
@@ -384,11 +310,11 @@ plt.scatter(xg,yg, c=Cg, cmap='inferno',s=2)
 plt.colorbar(label='Charge[electrons]')
 plt.savefig('xRay_ag_event50')
 plt.show()
-'''
-# cut values
 
 
-'''
+
+####
+
 y_r_eccen = np.reshape(r_eccen, (117774,))
 x_r = np.arange(117774)
 
@@ -398,9 +324,8 @@ y_r_kL = np.reshape(r_kL, (117774,))
 
 y_values = np.reshape(g_eccen, (178124,))
 x_values = np.arange(178124)
-#print(x_values)
-#print(x_values.shape)
-'''
+
+
 list_of_array0 = [g_eccen, g_eFC, g_kL, g_kT, g_len, g_sL, g_sT, g_frac, g_hits, g_rmsL, g_rmsT, g_rot
                    #g_centerX, g_centerY
                    ]
@@ -412,18 +337,10 @@ list_of_array5 = [cn_eccen, cn_eFC, cn_kL, cn_kT, cn_len, cn_sL, cn_sT, cn_frac,
 list_of_array6 = [mc_eccen, mc_eFC, mc_kL, mc_kT, mc_len, mc_sL, mc_sT, mc_frac, mc_hits, mc_rmsL, mc_rmsT, mc_rot]
 list_of_array7 = [ti_eccen, ti_eFC, ti_kL, ti_kT, ti_len, ti_sL, ti_sT, ti_frac, ti_hits, ti_rmsL, ti_rmsT, ti_rot]
 
-list_of_array_r = [r_eccen, r_eFC, r_kL, r_kT, r_len, r_sL, r_sT, r_frac, r_hits, r_rmsL, r_rmsT, r_rot
-                   #r_centerX, r_centerY
-                    ]
-#list_of_array1 = [r_hits]
+list_of_array_r = [r_eccen, r_eFC, r_kL, r_kT, r_len, r_sL, r_sT, r_frac, r_hits, r_rmsL, r_rmsT, r_rot]
 list_of_array_name = ['eccentricity', 'energyFromCharge','kurtosisLongitudinal', 'kurtosisTransverse', 'length', 
                           'skewnessLongitudinal', 'skewnessTransverse', 'fractionInTransverseRms', 
-                                                 'hits', 'rmsLongitudinal', 'rmsTransverse', 'rotationAngle'
-                        #'cast_centerX', 'cast_centerY'     
-                                            ]
-
-#list_of_array_name = ['cast_hits']
-#list_of_array0 = [g_hits]
+                                                 'hits', 'rmsLongitudinal', 'rmsTransverse', 'rotationAngle']
 
 def func(x):
     if x == 'hits':
@@ -450,18 +367,14 @@ def func(x):
         return 0, 2
     elif x == 'rotationAngle':
         return -0.1, 3.5
-    elif x == 'cast_eventN':
-        return 0, 500000
     else: 
         return None    
 
 
 for i,j,n in zip(list_of_array0, list_of_array_r, list_of_array_name):
+     cutrange = func(n) 
      y_r = np.reshape(j, (122138,))
      y_r = y_r[np.where(np.isfinite(y_r))[0]]
-     cutrange = func(n)
-     #print(cutrange) 
-
      y_r = y_r[np.where((y_r < cutrange[1]) & (y_r > cutrange[0]))[0]]
 
      y_g = np.reshape(i, (178124,))
@@ -479,16 +392,6 @@ for i,j,n in zip(list_of_array0, list_of_array_r, list_of_array_name):
      #plt.show()
 
 
-
-
-#y_r = np.reshape(r_frac, (117774,))
-#y_r = y_r[np.where(np.isfinite(y_r))[0]]
-#cutrange = func(n)
- #print(cutrange) 
-
-#y_r = y_r[np.where((y_r < 15) & (y_r > -100))[0]]
-
-'''
 y_g = np.reshape(g_eFC, (178124,))
 y_al = np.reshape(al_eFC, (131396,))
 y_c = np.reshape(c_eFC, (150056,))
@@ -500,7 +403,6 @@ y_ti = np.reshape(ti_eFC, (166568,))
 
 h_cut = 10
 l_cut = -3
-
 y_g = y_g[np.where((y_g < h_cut) & (y_g > l_cut))[0]]
 y_al = y_al[np.where((y_al < h_cut) & (y_al > l_cut))[0]]
 y_c = y_c[np.where((y_c < h_cut) & (y_c > l_cut))[0]]
@@ -510,74 +412,21 @@ y_cn = y_cn[np.where((y_cn < h_cut) & (y_cn > l_cut))[0]]
 y_mc = y_mc[np.where((y_mc < h_cut) & (y_mc > l_cut))[0]]
 y_ti = y_ti[np.where((y_ti < h_cut) & (y_ti > l_cut))[0]]
 
-#y_g = y_g[np.where(np.isfinite(y_g))[0]]
-#y_g = y_g[np.where((y_g < 15) & (y_g > -100))[0]]
-
 fig, ax = plt.subplots(1, figsize = (10,10))
-#fig = plt.figure() 
 plt.xlabel('')
 plt.ylabel('event number')
-#plt.hist(y_r,100,color='skyblue' ,alpha= 0.5, lw=2, label='')
-#plt.hist(y_g,100,alpha = 0.5, lw=2, label='Ag_6')
-#plt.hist(y_al,100,alpha = 0.5, lw=2, label='Al_4')
-#plt.hist(y_c,100,alpha = 0.5, lw=2, label='C_0.6')
-#plt.hist(y_cu1,100,alpha = 0.5, lw=2, label='Cu_0.9')
-#plt.hist(y_cu2,100,alpha = 0.5, lw=2, label='Cu_2')
-#plt.hist(y_cn,100,alpha = 0.5, lw=2, label='Cu-Ni_15')
-#plt.hist(y_mc,100,alpha = 0.5, lw=2, label='Mn-Cr_12')
+plt.hist(y_g,100,alpha = 0.5, lw=2, label='Ag_6')
+plt.hist(y_al,100,alpha = 0.5, lw=2, label='Al_4')
+plt.hist(y_c,100,alpha = 0.5, lw=2, label='C_0.6')
+plt.hist(y_cu1,100,alpha = 0.5, lw=2, label='Cu_0.9')
+plt.hist(y_cu2,100,alpha = 0.5, lw=2, label='Cu_2')
+plt.hist(y_cn,100,alpha = 0.5, lw=2, label='Cu-Ni_15')
+plt.hist(y_mc,100,alpha = 0.5, lw=2, label='Mn-Cr_12')
 plt.hist(y_ti,100,alpha = 0.5, lw=2, label='Ti_9')
 plt.legend()
-#plt.savefig('rotationAngle_for_different_energy')
-plt.savefig('eFC_ti')
+plt.savefig('energyFromCharge_for_different_energy')
+#plt.savefig('eFC')
 plt.show()
-'''
-
-'''
-train_data_Ag = np.hstack((g_eccen, g_eFC, g_kL))
-
-train_data_reco = np.hstack((r_eccen, r_eFC, r_kL))
-
-print(train_data_Ag.shape)
-#print(train_data_Ag[2])
 
 
 
-label = 0 
-label_reco = 1
-#train_data = np.array([ 2,4,6 ])
-train_data = train_data_Ag.astype(np.float32)
-train_data_reco = train_data_reco.astype(np.float32)
-
-class Dataset(data.Dataset):
-    'Characterizes a dataset for Pytorch'
-    def __init__(self, train_data, labels):
-        'Initialization'
-        self.labels = labels 
-        self.train_data = torch.tensor(train_data)
-
-    def __len__(self):
-        'Denotes the total number of samples'
-        return len(self.train_data)
-
-    def __getitem__(self, index):
-        'Generates one sample of data'
-        #select sample
-        ID = self.train_data[index]
-
-        # Load data and get label
-        X = ID
-        y = self.labels 
-
-        return X, y
-
-training_set1 = Dataset(train_data, label)
-training_set2 = Dataset(train_data_reco, label_reco)
-training_set = data.ConcatDataset([training_set1, training_set2])
-train_set_loader = data.DataLoader(training_set, 2, shuffle=True, 
-                            num_workers = 0)
-
-#print(training_set[200000])
-for X, y in train_set_loader:
-    print(X.shape, X.dtype, y.shape, y.dtype)
-    break
-'''
