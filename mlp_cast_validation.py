@@ -13,8 +13,10 @@ import matplotlib.pyplot as plt
 
 
 #load the calibration data
+
 hf = h5py.File('../Dongjin/Cast_IAXO_data/calibration-cdl-2018.h5')
 
+# load all geom. characters together into an single array for each event  
 def readDatasets(h5f, path):
     datasets = ['eccentricity',
                 'energyFromCharge',
@@ -36,7 +38,7 @@ def readDatasets(h5f, path):
 calib_dsets_Ag_n = readDatasets(hf, 'calibration-cdl-feb2019-Ag-Ag-6kV/')
 
 
-# datasets with different energy
+# calibration datasets with different energy
 calib_dsets_Cu2_n = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-2kV/')
 calib_dsets_Cu09_n = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-0.9kV/')
 calib_dsets_Al_n = readDatasets(hf, 'calibration-cdl-feb2019-Al-Al-4kV/')
@@ -50,7 +52,7 @@ calib_dsets_Ti_n = readDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/')
 hf_rec = h5py.File('../Dongjin/Cast_IAXO_data/reco_186_fixed.h5')
 background_dsets = readDatasets(hf_rec, 'reconstruction/run_186/chip_3/')
 
-# load likelihood values
+# load likelihood values without cut
 likeli_ag_nocut = np.array(hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/likelihood'))
 likeli_al_nocut = np.array(hf.get('calibration-cdl-feb2019-Al-Al-4kV/likelihood'))
 likeli_c_nocut = np.array(hf.get('calibration-cdl-feb2019-C-EPIC-0.6kV/likelihood'))
@@ -83,6 +85,7 @@ calib_dsets = np.concatenate((calib_dsets_Ag, calib_dsets_Al, calib_dsets_C,
                             calib_dsets_Cu2, calib_dsets_Cu_Ni, calib_dsets_Mn_Cr, calib_dsets_Ti
                             ),axis=0)
 
+# try to cut the datasets with some cutvalues
 df = pd.DataFrame(calib_dsets,
                    columns=['eccen',
                    'eFC',
@@ -91,9 +94,7 @@ df = pd.DataFrame(calib_dsets,
                    ,'rot',
                    'likelihood'
                    ])
-#b = df.index.tolist()
-#print(len(b))
-
+# the cut values are defined
 dfc_cut = df[ ((df['eccen']>1) & (df['eccen']<5)) & ((df['eFC']>0) & (df['eFC']<15)) &
               ((df['kL']>-2) & (df['kL']<5)) & ((df['kT']>-2) & (df['kT']<4)) & ((df['len']>0) & (df['len']<14)) &
               ((df['sL']>-2) & (df['sL']<2)) & ((df['sT']>-2) & (df['sT']<2)) & ((df['frac']>0) & (df['frac']<0.5)) &
@@ -102,11 +103,8 @@ dfc_cut = df[ ((df['eccen']>1) & (df['eccen']<5)) & ((df['eFC']>0) & (df['eFC']<
               ((df['rmsT']>0) & (df['rmsT']<2)) &
                 ((df['rot']>-0.1) & (df['rot']<3.5))
             ]
-
 dfc_cut = dfc_cut.drop('eFC', axis=1)
 dfc_cut = dfc_cut.drop('likelihood', axis=1)
-
-#print(dfc_cut)
 
 
 # background data cut
@@ -117,7 +115,6 @@ dfb = pd.DataFrame(background_dsets,
                    ,'rot',
                    'likelihood'
                    ])
-
 dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & ((dfb['eFC']>0.0) & (dfb['eFC']<5)) &
                ((dfb['kL']>-2) & (dfb['kL']<4)) & ((dfb['kT']>-2) & (dfb['kT']<4)) &
                ((dfb['len']>0) & (dfb['len']<18)) & ((dfb['sL']>-2) & (dfb['sL']<2)) &
@@ -130,7 +127,6 @@ dfb_cut = dfb_cut.drop('eFC', axis=1)
 dfb_cut = dfb_cut.drop('likelihood', axis=1)
 
 # validation data cut
-
 dfv = pd.DataFrame(calib_dsets,
                     columns=['eccen','eFC',
                     'kL','kT','len','sL','sT','frac',#'hits',
@@ -230,10 +226,12 @@ test_data = calibration_data[70001:80000]
 train_data_background = background_data[:70000]
 test_data_background = background_data[70001:80000]
 
-#print(train_data_background)
 
 
- # cut the 
+####
+# in this part only the chracter 'energyFromCharge' is used to create a dataset with same eventnumber for all energy area
+
+# pass through only the 'energyFromCharge' values within min and max 
 def energycutValidation(df, min_cut, max_cut, num_data):
     df = df[ ((dfv['eFC']>=min_cut) & (dfv['eFC']<=max_cut)) ]
     df = df.to_numpy().astype(np.float32)
@@ -244,7 +242,8 @@ def energycutValidation(df, min_cut, max_cut, num_data):
     return df
 
 n_e = 2000 
- # cdl data with only cut in energy 
+ # cdl data with only cut in the selected energy area
+ # devide the energy area with range of 0 to 8 keV into 32 parts with an intervall of 0.25 keV 
 valid_data1 = energycutValidation(dfv_E, 0, 0.25, n_e)
 valid_data2 = energycutValidation(dfv_E, 0.25, 0.5, n_e)
 valid_data3 = energycutValidation(dfv_E, 0.5, 0.75, n_e)
@@ -278,7 +277,6 @@ valid_data30 = energycutValidation(dfv_E, 7.25, 7.5, n_e)
 valid_data31 = energycutValidation(dfv_E, 7.5, 7.75, n_e)
 valid_data32 = energycutValidation(dfv_E, 7.75, 8, n_e)
 
-
 dset = np.concatenate((#valid_data1, 
 valid_data2, valid_data3, valid_data4, valid_data5, valid_data6,
                        valid_data7, valid_data8, valid_data9, valid_data10, valid_data11, valid_data12 
@@ -288,14 +286,14 @@ valid_data2, valid_data3, valid_data4, valid_data5, valid_data6,
                        ,valid_data29, valid_data30, valid_data31, valid_data32
                        ))
 
-#Plot Energieverteilung der Inputdaten
-
+#plot the flat energydistribution of inputdata
 dset = dset[:, 1] #taking only energyFromCharge values 
 plt.xlabel('E')
 plt.ylabel('event number')
 plt.hist(dset,100,alpha = 0.5, lw=2, label='')
 plt.show()
 
+# cut off the 'energyFromCharge' for the validation of the network 
 valid_data1= np.delete(valid_data1,1,1)
 valid_data2= np.delete(valid_data2,1,1)
 valid_data3= np.delete(valid_data3,1,1)
@@ -329,12 +327,13 @@ valid_data30= np.delete(valid_data30,1,1)
 valid_data31= np.delete(valid_data31,1,1)
 valid_data32= np.delete(valid_data32,1,1)
 
+
 #valid_data = calibration_data[50001:51000]
 valid_data = calibration_data[80001:90001]
 valid_data_back = background_data[80001:90001]
 
-# prepare dataset with labels
 
+# prepare dataset with labels
 class Dataset(data.Dataset):
     'Characterizes a dataset for Pytorch'
     def __init__(self, train_data, labels):
@@ -360,11 +359,15 @@ class Dataset(data.Dataset):
         # y = self.labels
         return X, y
 
-
 label_calibration = 1
 label_background = 0
 
+#select the batch size
 batch_size = 100
+
+
+####
+# this part reshape the datasets into a shape which the network demands
 
 training_set1 = Dataset(train_data, label_calibration)
 training_set2 = Dataset(train_data_background, label_background)
@@ -372,7 +375,6 @@ training_set = data.ConcatDataset([training_set2, training_set1])
 
 train_iter = data.DataLoader(training_set, batch_size, shuffle=True,
                              num_workers = 0)
-
 
 test_set1 = Dataset(test_data, label_calibration)
 test_set2 = Dataset(test_data_background, label_background)
@@ -471,13 +473,16 @@ valid_iter29 = data.DataLoader(valid_set29, batch_size, shuffle=True, num_worker
 valid_iter30 = data.DataLoader(valid_set30, batch_size, shuffle=True, num_workers = 0)
 valid_iter31 = data.DataLoader(valid_set31, batch_size, shuffle=True, num_workers = 0)
 valid_iter32 = data.DataLoader(valid_set32, batch_size, shuffle=True, num_workers = 0)
+####
 
 
+####
 #starting mlp
 
 seed = 1
 torch.manual_seed(seed)
 
+# define the MLP model 
 class MLP(nn.Module):
     def __init__(self):
         super().__init__()
@@ -501,39 +506,9 @@ def init_weights(m):
 # actually the most efficient one etc!
 net.apply(init_weights);
 
-
-'''
-num_inputs, num_outputs, num_hiddens = 12, 2, 1000
-seed = 1
-torch.manual_seed(seed)
-W1 = nn.Parameter(torch.randn(num_inputs, num_hiddens, requires_grad=True) * 0.01)
-b1 = nn.Parameter(torch.zeros(num_hiddens, requires_grad=True))
-W2 = nn.Parameter(torch.randn(num_hiddens, num_outputs, requires_grad=True) * 0.01)
-b2 = nn.Parameter(torch.zeros(num_outputs, requires_grad=True))
-
-params = [W1, b1, W2, b2]
-'''
-
-'''
-def net(X):   #using sigmoid function
-    X = X.reshape((-1, num_inputs))
-    H = torch.sigmoid(X @ W1 + b1)
-    return (H @ W2 + b2)
-
-def net(X):
-    X = X.reshape((-1, num_inputs))
-    H = relu(X @ W1 + b1)
-    return (H @ W2 + b2)
-'''
-
-#loss = nn.KLDivLoss()
+# define the loss function sigmoid + cross entropy loss
 loss = nn.BCEWithLogitsLoss()
-#def loss(y_hat, y):  #@save
-#    """Squared loss."""
-#    return (y_hat - y.reshape(y_hat.shape)) ** 2 / 2
 #loss = nn.CrossEntropyLoss()
-#def cross_entropy(y_hat, y):
-#    return -torch.log(y_hat[range(len(y_hat)), y])
 
 
 class Accumulator:  #@save
@@ -550,7 +525,7 @@ class Accumulator:  #@save
     def __getitem__(self, idx):
         return self.data[idx]
 
-def accuracy(y_hat, y):  #@save
+def accuracy(y_hat, y): 
     """Compute the number of correct predictions."""
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
         y_hat = y_hat.argmax(axis=1)
@@ -558,7 +533,7 @@ def accuracy(y_hat, y):  #@save
     cmp = y_hat.type(y.dtype) == y
     return float(cmp.type(y.dtype).sum())
 
-def evaluate_accuracy(net, data_iter):  #@save
+def evaluate_accuracy(net, data_iter):  
     """Compute the accuracy for a model on a dataset."""
     if isinstance(net, torch.nn.Module):
         net.eval()  # Set the model to evaluation mode
@@ -574,32 +549,10 @@ def evaluate_accuracy(net, data_iter):  #@save
     #print("Test Accuracy ", correct / len(data_iter))
     return metric[0] / metric[1], correct / (len(data_iter)*batch_size)
 
-def accuracy_validation_roc(net, data_iter, set_length):
-    if isinstance(net,torch.nn.Module):
-        net.eval()
-    #tn0 = np.empty(shape=(len(valid_set),))
-    #tp1 = np.empty(shape=(len(valid_set),))
-    res = np.empty(shape=(set_length,2))
-    batch_idx = 0
-    correct = 0
 
-    with torch.no_grad():
-        for X, y in data_iter:
-            y_hat = net.forward(X)  
-            pred = y_hat.argmax(1)
-            correct += pred.eq(y.argmax(1)).sum()
-            #max_value = torch.max(y_hat)
-            #tn0[batch_idx * batch_size : (batch_idx + 1) * batch_size] = y_hat[][0] 
-            #tp1[batch_idx * batch_size : (batch_idx + 1) * batch_size] = y_hat[][1]
-            res[batch_idx * batch_size : (batch_idx + 1) * batch_size, :] = y_hat 
-            batch_idx = batch_idx + 1
-
-    return correct/(len(data_iter)*batch_size), res
-            
-
-
-def train_epoch_ch3(net, train_iter, loss, updater):  #@save
-    """The training loop defined in Chapter 3."""
+# train the model for an epoch
+def train_epoch_ch3(net, train_iter, loss, updater):  
+    """The training loop"""
     # Set the model to training mode
     if isinstance(net, torch.nn.Module):
         net.train()
@@ -609,21 +562,13 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
     for X, y in train_iter:
         # Compute gradients and update parameters
         y_hat = net.forward(X)
-        #print(X)
-        #print(y_hat.size())
-        #print(y)
         l = loss(y_hat, y)
-        #print(float(l))
-        #print(l)
-        #break
         if isinstance(updater, torch.optim.Optimizer):
             # Using PyTorch in-built optimizer & loss criterion
             updater.zero_grad()
             l.backward()
             updater.step()
-            #print("add metric")
             metric.add(float(l) * len(y), accuracy(y_hat, y), y.numel())
-            #print(metric[1])
         else:
             # Using custom built optimizer & loss criterion
             l.sum().backward()
@@ -638,8 +583,10 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
     #print("Train Accuracy ", correct / len(train_iter))
     return metric[0] / metric[2], metric[1] / metric[2], correct / (len(train_iter)*batch_size)
 
+
+#train the model for whole epoch numbers
 def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
-    """Train a model (defined in Chapter 3)."""
+    """Train a model"""
     x = np.arange(num_epochs)
     y_loss = np.empty(shape=(num_epochs,))
     y_train_acc = np.empty(shape=(num_epochs,))
@@ -675,12 +622,34 @@ def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
     #plt.savefig('mlp_loss_70000')
     plt.show()   
 
-
+    
+    
+# compute the accuracy of validation data after training the network
 def valid_ch3(net, valid_iter):
     valid_acc = evaluate_accuracy(net, valid_iter)
     print('Validation Accuracy:', valid_acc[1])
     return valid_acc[1]
 
+
+# should compute the output distributions of the mlp and the accuracy
+def accuracy_validation_roc(net, data_iter, set_length):
+    if isinstance(net,torch.nn.Module):
+        net.eval()
+    res = np.empty(shape=(set_length,2))
+    batch_idx = 0
+    correct = 0
+
+    with torch.no_grad():
+        for X, y in data_iter:
+            y_hat = net.forward(X)  
+            pred = y_hat.argmax(1)
+            correct += pred.eq(y.argmax(1)).sum()
+            res[batch_idx * batch_size : (batch_idx + 1) * batch_size, :] = y_hat 
+            batch_idx = batch_idx + 1
+
+    return correct/(len(data_iter)*batch_size), res
+
+#separate output distributions for neuron 0 and 1           
 def valid_roc(net, valid_iter, set_length):
     valid_acc = accuracy_validation_roc(net, valid_iter, set_length)
     print('Validation Accuracy:', valid_acc[0])
@@ -738,49 +707,44 @@ def roc_curve(signal_output, background_output, m):
 
     # if signal is lower, roc[0] is signal efficiency
     return roc[:,0], roc[:,1] 
-'''
-    plt.xlabel('signal efficiency')
-    plt.ylabel('background rejection')
-    plt.plot(roc[:,1], roc[:,0],lw=2,label='')
-    #plt.legend()
-    plt.show()
-'''
 
 
+# select the number of epochs and the learnug rate
 num_epochs, lr = 150, 0.05
 updater = torch.optim.SGD(net.parameters(), lr=lr)
 
 print('check')
 
+# train the network
 train_ch3(net, train_iter, test_iter, loss, num_epochs, updater)
+
+ # validate the network
 valid_ch3(net, valid_iter)
-#valid_ch3(net, valid_iter_cal)
-#valid_ch3(net, valid_iter_back)
+valid_ch3(net, valid_iter_cal)
+valid_ch3(net, valid_iter_back)
 
-#output_cal = valid_roc(net, valid_iter_cal, 20000)
-#output_back = valid_roc(net, valid_iter_back, 20000)
+# compute the output distribution for calibration and background data
+output_cal = valid_roc(net, valid_iter_cal, 20000)
+output_back = valid_roc(net, valid_iter_back, 20000)
 
-'''
+ # plot the output distibutions of the output neuron 0 and 1 
 plt.xlabel('output (neuron 0)')
 plt.ylabel('event number #')
 plt.hist(output_back[0],100,alpha = 0.5, lw=2, label='background')
 plt.hist(output_cal[0],100,alpha = 0.5, lw=2, label='signal_all_calibration')
 plt.legend()
-plt.savefig('validation_mlp_output0_all_cal_2')
+#plt.savefig('validation_mlp_output0_all_cal_2')
 plt.show()
-
-
 plt.xlabel('output (neuron 1)')
 plt.ylabel('event number #')
 plt.hist(output_back[1],100,alpha = 0.5, lw=2, label= 'background')
 plt.hist(output_cal[1],100,alpha = 0.5, lw=2, label= 'signal_all_calibration')
 plt.legend()
-plt.savefig('validation_mlp_output1_all_cal_2')
+#plt.savefig('validation_mlp_output1_all_cal_2')
 plt.show()
 
-
+ # create ROC-curve for the validation 
 all = roc_curve(output_cal[0], output_back[0],13)
-
 plt.figure()
 plt.grid(axis='both', linestyle='--', linewidth=1)
 plt.xlabel('signal efficiency')
@@ -789,69 +753,35 @@ plt.plot(all[1], all[0],c='b',lw=1,label='mlp-all energy')
 plt.legend()
 plt.savefig('roc_curve_all_calib_2')
 plt.show()
-'''
-# plot Comparison of raw CDL logL data with logL data remaining after preprocessing cuts are applied
-l_nocut = [likeli_ag_nocut, likeli_al_nocut, likeli_c_nocut, likeli_cu1_nocut, likeli_cu2_nocut, likeli_cn_nocut, likeli_mc_nocut, likeli_ti_nocut]
-l_cut = [likeli_ag, likeli_al, likeli_c, likeli_cu09, likeli_cu2, likeli_cn, likeli_mc, likeli_ti]
-l_name = ['Ag-Ag-6kV', 'Al-Al-4kV', 'C-EPIC-06kV', 'Cu-EPIC-09kV', 'Cu-EPIC-2kV', 'Cu-Ni-15kV', 'Mn-Cr-12kV', 'Ti-Ti-9kV']
-def compare_LogL(cut, nocut, name):
-    for i,j,n in zip(cut, nocut, name):
-        likeli = i[np.where(np.isfinite(i))[0]]
-        likeli_nocut = j[np.where(np.isfinite(j))[0]]
-        plt.figure()
-        plt.xlabel('LogL')
-        plt.ylabel('event number #')
-        plt.title(n)
-        plt.hist(likeli_nocut,100,color='r',alpha = 0.5, lw=2, label='LogL_nocut')
-        plt.hist(likeli,100,color='b',alpha = 0.5, lw=2, label='LogL')
-        plt.legend()
-        plt.savefig('comparison_cdl_logL_data_' + n)
-        #plt.show()
-    return 0
-
-#compare_LogL(l_cut, l_nocut, l_name)
 
 
+
+####
 # create and plot roc curves for all cdl data with LogL data
 likeli_back = np.clip(likeli_back,0,50)
-
 def plot_roc_curve_with_logL(likeli, valid_iter, name):
     likeli = likeli[np.where((likeli < 40) & (likeli > 0))[0]]
     output_cal = valid_roc(net, valid_iter, num_vset)
     output_back = valid_roc(net, valid_iter_back, num_vset)
     roc_cdl = roc_curve(output_cal[0], output_back[0], 13)
     roc_likeli = roc_curve(likeli, likeli_back, 44)
-    #plt.figure()
-    #plt.hist(output_cal[0],100,color='r',alpha=0.5, lw=2, label='LogL_ag')
-    #plt.hist(output_back[0],100,color='b',alpha=0.5, lw=2, label='LogL_back')
-    #plt.show()
-    #plt.figure()
-    #plt.xlabel('signal efficiency')
-    #plt.ylabel('background rejection')
-    #plt.plot(roc_likeli[1], roc_likeli[0],c='b',lw=2,label='LogL')
-    #plt.plot(roc_cdl[1], roc_cdl[0],c='r',lw=2,label='mlp')
-    #plt.legend()
-    #plt.savefig('roc_curve_with_logL_'+name)
-    #plt.show()
     return roc_likeli[0], roc_likeli[1], roc_cdl[0], roc_cdl[1]
 
 l_val = [valid_iter_ag, valid_iter_al, valid_iter_c, valid_iter_cu1, valid_iter_cu2, 
         valid_iter_cn, valid_iter_mc, valid_iter_ti]
-#for i,j,n in zip(l_cut, l_val, l_name):
-#    plot_roc_curve_with_logL(i, j, n)
 
+ # computing and setting for the roc-curve of the calibration and likelihood data  
 ti = plot_roc_curve_with_logL(likeli_ti ,valid_iter_ti,'Ti-Ti-9kV')
 ag = plot_roc_curve_with_logL(likeli_ag ,valid_iter_ag,'Ag-Ag-6kV')
-
 al = plot_roc_curve_with_logL(likeli_al ,valid_iter_al,'Al-Al-4kV')
 c = plot_roc_curve_with_logL(likeli_c,valid_iter_c,'C-EPIC-06kV')
 cu1 = plot_roc_curve_with_logL(likeli_cu09 ,valid_iter_cu1,'Cu-EPIC-09kV')
 cu2 = plot_roc_curve_with_logL(likeli_cu2 ,valid_iter_cu2,'Cu-EPIC-2kV')
-
 cn = plot_roc_curve_with_logL(likeli_cn ,valid_iter_cn,'Cu-Ni-15kV')
 mc = plot_roc_curve_with_logL(likeli_mc ,valid_iter_mc,'Mn-Cr-12kV')
 
 
+ # plot the roc-curves of each calibration target to compare the validation and likelihood results
 plt.figure()
 plt.grid(axis='both', linestyle='--', linewidth=1)
 plt.xlabel('signal efficiency')
@@ -925,43 +855,35 @@ plt.plot(ti[3], ti[2],c='k',linestyle='--',lw=1,label='mlp-Ti-9')
 plt.legend()
 plt.savefig('roc_curve_with_logL_ti')
 
-#plt.legend()
-#plt.savefig('roc_curve_with_logL_all_44')
-#plt.show()
-
-
-'''
-#likeli_Ag = likeli_Ag[np.where(np.isfinite(likeli_Ag))[0]]
-#likeli_ag = likeli_ag[np.where((likeli_ag < 40) & (likeli_ag > 0))[0]]
-#likeli_back = likeli_back[np.where(np.isfinite(likeli_back))[0]]
-#likeli_back = likeli_back[np.where((likeli_back < 40) & (likeli_back > 0))[0]]
-
-#roc_Ag = roc_curve(output_cal[0], output_back[0], 13)
-
-
-likeli_ag = likeli_ag[np.where((likeli_ag < 40) & (likeli_ag > 0))[0]]
-likeli_ag_nocut = likeli_ag_nocut[np.where((likeli_ag_nocut < 40) & (likeli_ag_nocut > 0))[0]]
-
-
-roc_likeli = roc_curve(likeli_ag_nocut, likeli_back, 50)
-roc_likeli_c = roc_curve(likeli_ag, likeli_back, 50)
-
+ # plot the roc-curves of each calibration target together
+plt.figure()
+plt.grid(axis='both', linestyle='--', linewidth=1)
 plt.xlabel('signal efficiency')
 plt.ylabel('background rejection')
-plt.plot(roc_likeli[1], roc_likeli[0],c='b',lw=2,label='LogL_nocut')
-plt.plot(roc_likeli_c[1], roc_likeli_c[0],c='r',lw=2,label='LogL')
+plt.plot(ag[1], ag[0],c='b',lw=1,label='LogL')
+plt.plot(ag[3], ag[2],c='b',linestyle='--',lw=1,label='mlp-Ag-6')
+plt.plot(al[1], al[0],c='r',lw=1,label='LogL')
+plt.plot(al[3], al[2],c='r',linestyle='--',lw=1,label='mlp-Al-4')
+plt.plot(c[1], c[0],c='g',lw=1,label='LogL')
+plt.plot(c[3], c[2],c='g',linestyle='--',lw=1,label='mlp-C-0.6')
+plt.plot(cu1[1], cu1[0],c='m',lw=1,label='LogL')
+plt.plot(cu1[3], cu1[2],c='m',linestyle='--',lw=1,label='mlp-Cu-0.9')
+plt.plot(cu2[1], cu2[0],c='c',lw=1,label='LogL')
+plt.plot(cu2[3], cu2[2],c='c',linestyle='--',lw=1,label='mlp-Cu-2')
+plt.plot(cn[1], cn[0],c='y',lw=1,label='LogL')
+plt.plot(cn[3], cn[2],c='y',linestyle='--',lw=1,label='mlp-Cu-Ni-15')
+plt.plot(mc[1], mc[0],c='tab:brown',lw=1,label='LogL')
+plt.plot(mc[3], mc[2],c='tab:brown',linestyle='--',lw=1,label='mlp-Mn-Cr-12')
+plt.plot(ti[1], ti[0],c='k',lw=1,label='LogL')
+plt.plot(ti[3], ti[2],c='k',linestyle='--',lw=1,label='mlp-Ti-9')
 plt.legend()
+plt.savefig('roc_curves_with_logL_all_targets')
 plt.show()
-'''
+####
 
+####
+ # accuracy-energy distribution for the flattend energy area from 0 to 8 keV
 
-
-
-
-
-
-# Accuracy-Energieverteilung
-'''
 l = [valid_iter1, valid_iter2, valid_iter3, valid_iter4, valid_iter5, valid_iter6, 
 valid_iter7, valid_iter8, valid_iter9, valid_iter10, valid_iter11, valid_iter12
 , valid_iter13, valid_iter14, valid_iter15, valid_iter16, valid_iter17, valid_iter18
@@ -979,5 +901,5 @@ plt.xlabel('E (energyFromCharge) / keV')
 plt.ylabel('Accuracy')    
 plt.plot(energy, acc, lw=2, label='')
 plt.show()
-'''
+
 
