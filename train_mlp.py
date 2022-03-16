@@ -276,7 +276,7 @@ def evaluate_accuracy(net, data_iter):  #@save
     #print("Test Accuracy ", correct / len(data_iter))
     return metric[0] / metric[1], correct / (len(data_iter)*batch_size)
 
-def accuracy_validation_roc(net, data_iter, set_length):
+def accuracy_validation_outputdist(net, data_iter, set_length):
     if isinstance(net,torch.nn.Module):
         net.eval()
     res = np.empty(shape=(set_length,2))
@@ -371,7 +371,7 @@ def valid_ch3(net, valid_iter):
     return valid_acc[1]
 
 def valid_output_dist(net, valid_iter, set_length):
-    valid_acc = accuracy_validation_roc(net, valid_iter, set_length)
+    valid_acc = accuracy_validation_outputdist(net, valid_iter, set_length)
     print('Validation Accuracy:', valid_acc[0])
     res = valid_acc[1]
     res0 = res[:,0]
@@ -386,8 +386,8 @@ print('check')
 
 train_ch3(net, train_iter, test_iter, loss, num_epochs, updater)
 valid_ch3(net, valid_iter)
-#valid_ch3(net, valid_iter_cal)
-#valid_ch3(net, valid_iter_back)
+valid_ch3(net, valid_iter_cal)
+valid_ch3(net, valid_iter_back)
 
 output_cal = valid_output_dist(net, valid_iter_cal, 20000)
 output_back = valid_output_dist(net, valid_iter_back, 20000)
