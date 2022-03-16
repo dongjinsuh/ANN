@@ -27,9 +27,7 @@ def readDatasets(h5f, path):
                 #'hits',
                 'rmsLongitudinal',
                 'rmsTransverse',
-                'rotationAngle'
-                #,'likelihood'
-                ]
+                'rotationAngle']
     data_list = [np.array(h5f.get(path + dset)).flatten() for dset in datasets]
     return np.array(data_list).transpose()
 
@@ -49,17 +47,6 @@ def readxyDatasets(h5f, path):
     data = np.array(h5f.get(path))
     return data
 
-#c1 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/x')
-#c2 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/y')
-#c3 = hf.get('calibration-cdl-feb2019-Ag-Ag-6kV/charge')
-
-#cal_x = np.array(c1)
-#cal_y = np.array(c2)
-#cal_charge = np.array(c3)
-
-#b1 = hf_rec.get('reconstruction/run_186/chip_3/x')
-#b2 = hf_rec.get('reconstruction/run_186/chip_3/y')
-#b3 = hf_rec.get('reconstruction/run_186/chip_3/charge')
 
 b_x = readxyDatasets(hf_rec, 'reconstruction/run_186/chip_3/x')
 b_y =readxyDatasets(hf_rec, 'reconstruction/run_186/chip_3/y')
@@ -95,51 +82,12 @@ mc_x = readxyDatasets(hf, 'calibration-cdl-feb2019-Mn-Cr-12kV/x')
 mc_y = readxyDatasets(hf, 'calibration-cdl-feb2019-Mn-Cr-12kV/y')
 mc_charge = readxyDatasets(hf, 'calibration-cdl-feb2019-Mn-Cr-12kV/charge')
 
-
 ti_x = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/x')
 ti_y = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/y')
 ti_charge = readxyDatasets(hf, 'calibration-cdl-feb2019-Ti-Ti-9kV/charge')
 
-# save calibration data
-#cal_x = ag_x
-#cal_y = ag_y
-#cal_charge = ag_charge
-
-#background data
-#b_x = np.array(b1)
-#b_y = np.array(b2)
-#b_charge = np.array(b3)
-
 hf.close
 hf_rec.close
-
-
-# cut for validation and LogL 
-def validation_cut(calib_dsets):
-    dfv = pd.DataFrame(calib_dsets,
-                    columns=['eccen','eFC',
-                    'kL','kT','len','sL','sT','frac',#'hits',
-                    'rmsL','rmsT'
-                    ,'rot'#, 'likelihood'
-                    ])
-
-    dfv_cut = dfv[  ((dfv['eccen']>1) & (dfv['eccen']<2.5)) & #((dfv['eFC']>0) & (dfv['eFC']<15)) &
-              ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) & ((dfv['len']>0) & (dfv['len']<14)) &
-              ((dfv['sL']>-2) & (dfv['sL']<2)) & ((dfv['sT']>-2) & (dfv['sT']<2)) & ((dfv['frac']>0) & (dfv['frac']<0.5)) &
-              #((df['hits']>0) & (df['hits']<500)) & 
-              ((dfv['rmsL']>0) & (dfv['rmsL']<4)) &
-              ((dfv['rmsT']>0) & (dfv['rmsT']<2)) & ((dfv['rot']>-0.1) & (dfv['rot']<3.5))  ]
-    
-    # get LogL data which passed through cut 
-    df_LogL = dfv_cut['likelihood']
-    likeli_Ag = df_LogL.to_numpy().astype(np.float32)
- 
-    dfv_cut = dfv_cut.drop('eFC', axis=1)
-    dfv_cut = dfv_cut.drop('likelihood', axis=1)
-    
-
-    return dfv_cut.to_numpy().astype(np.float32), likeli_Ag
-
 
 
 calib_dsets = np.concatenate((calib_dsets_Ag, calib_dsets_Al, calib_dsets_C, 
@@ -147,16 +95,13 @@ calib_dsets = np.concatenate((calib_dsets_Ag, calib_dsets_Al, calib_dsets_C,
                             ,calib_dsets_Cu2
                             , calib_dsets_Cu_Ni
                             , calib_dsets_Mn_Cr
-                            , calib_dsets_Ti  
-                            ),axis=0)
-
+                            , calib_dsets_Ti),axis=0)
 x_dsets = np.concatenate((ag_x, al_x, c_x, cu1_x,cu2_x, cn_x,mc_x, ti_x),axis=0) 
 y_dsets = np.concatenate((ag_y, al_y, c_y, cu1_y, cu2_y, cn_y, mc_y, ti_y),axis=0)
 charge_dsets = np.concatenate((ag_charge, al_charge,c_charge, cu1_charge, cu2_charge, cn_charge, mc_charge, ti_charge),axis=0)
 
 
-# data cut
-
+# data cut for calibration data
 def datacut(calib_dsets):
     df = pd.DataFrame(calib_dsets,
                    columns=['eccen',
@@ -176,14 +121,12 @@ def datacut(calib_dsets):
     return b 
 
 
-
  # preparing dataset for cnn
 num_data_cal = 16000 #len(c_charge)
 num_data_back = 21001 #len(b_charge)
 
 dataset_cal = np.empty(shape=(num_data_cal,1,256,256),dtype=np.float32)
 dataset_background = np.empty(shape=(num_data_back,1,256,256),dtype=np.float32)
-#dataset_val = np.empty(shape=(num_data_val,1,256,256))
 
 def setupCalibration(b, xdata, ydata, chargedata):
     for j,n in zip(b, range(num_data_cal)):
@@ -205,18 +148,9 @@ for j in range(num_data_back):
     for i in range(len(charge)):
         dataset_background[j][0][x[i]][y[i]] = charge[i]
 
-
 dataset_calibration = dataset_calibration.astype(np.float32)
 dataset_background = dataset_background.astype(np.float32)
 
-#print(dataset_cal.shape)
-#print(dataset_background.shape)
-'''
-dataset_cal = np.expand_dims(dataset_cal, axis=0) 
-dataset_cal = np.expand_dims(dataset_cal, axis=0) 
-dataset_background = np.expand_dims(dataset_background, axis=0) 
-dataset_background = np.expand_dims(dataset_background, axis=0) 
-'''
 
 
 #shuffle the data random
@@ -224,7 +158,6 @@ seed = 10
 np.random.seed(seed)
 np.random.shuffle(dataset_calibration)
 np.random.shuffle(dataset_background)
-#np.random.shuffle(dataset_validation_ag)
 
 #divide the data for training and test 
 train_data = dataset_calibration[:15000]
@@ -235,39 +168,15 @@ test_data_background = dataset_background[15001:16000]
 
 
 # setup validation data
-'''
-dfv = pd.DataFrame(calib_dsets_Ag,
-                   columns=['eccen',#'eFC',
-                   'kL','kT','len','sL','sT','frac',#'hits',
-                   'rmsL','rmsT'
-                   ,'rot'
-                   ])
-dfv_cut = dfv[ ((dfv['eccen']>0.0) & (dfv['eccen']<5)) &# ((dfv['eFC']>0.0) & (dfv['eFC']<15)) &
-               ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) &
-               ((dfv['len']>0) & (dfv['len']<18)) & ((dfv['sL']>-2) & (dfv['sL']<2)) &
-               ((dfv['sT']>-2) & (dfv['sT']<2)) & ((dfv['frac']>0) & (dfv['frac']<1)) &
-               #((dfv['hits']>0) & (dfv['hits']<500)) & 
-               ((dfv['rmsL']>0) & (dfv['rmsL']<5)) &
-               ((dfv['rmsT']>0) & (dfv['rmsT']<2)) ]
-v = dfv_cut.index.tolist()
-#print(len(b))
-'''
+
 num_data_val = 5000
-
-#del dataset_cal
-#del dataset_background
-
-#dataset_val = np.empty(shape=(num_data_val,1,256,256),dtype=np.float32)
-
 def setupValidation(dset, xdata, ydata, chargedata):
-
     dataset_val = np.empty(shape=(num_data_val,1,256,256),dtype=np.float32)
     dfv = pd.DataFrame(dset,
                    columns=['eccen',#'eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot'
-                   ])
+                   ,'rot'])
 
     dfv_cut = dfv[ ((dfv['eccen']>0.0) & (dfv['eccen']<5)) &# ((dfv['eFC']>0.0) & (dfv['eFC']<15)) &
                ((dfv['kL']>-2) & (dfv['kL']<5)) & ((dfv['kT']>-2) & (dfv['kT']<4)) &
@@ -290,17 +199,14 @@ def setupValidation(dset, xdata, ydata, chargedata):
 
 
 dataset_validation = setupValidation(calib_dsets, x_dsets, y_dsets, charge_dsets) 
-
 np.random.shuffle(dataset_validation)
 
 dataset_validation = dataset_validation.astype(np.float32)
-#dataset_validation_back = dataset_validation_back.astype(np.float32)
-
 valid_data_cal = dataset_validation[:5000]
 valid_data_back = dataset_background[1600:21000]
 
-# get label to dataset
 
+ # get label to dataset
 class Dataset(data.Dataset):
     'Characterizes a dataset for Pytorch'
     def __init__(self, train_data, labels):
@@ -397,9 +303,8 @@ def try_gpu(i=0):
 
 
 
-
+####
  # start cnn
-
 seed = 1
 torch.manual_seed(seed)
 
@@ -416,7 +321,6 @@ net = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2),
                     #nn.Linear(144, 30), nn.Tanh(),
                     nn.Linear(300, 30), nn.Tanh(), 
                     nn.Linear(30, 2))
-
 
 
 def evaluate_accuracy_gpu(net, data_iter, device=None):  #@save
@@ -465,7 +369,6 @@ def accuracy_validation_roc(net, data_iter, set_length, device=None):  #@save
             y = y.to(device)
             y_hat = net(X)
             y_hat_np = y_hat.detach().cpu().numpy()
-            
             pred = y_hat.argmax(1)
             correct += pred.eq(y.argmax(1)).sum()
 
@@ -520,8 +423,6 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
         y_loss[epoch] = train_l 
         y_train_acc[epoch] = train_acc 
         y_test_acc[epoch] = test_acc[1]
-        #if (epoch > 10 and train_l > 0.25):
-        #    break 
 
     print(f'loss {train_l:.3f}, train acc {train_acc:.3f}, '
           f'test acc {test_acc[1]:.3f}')
@@ -583,7 +484,6 @@ def roc_curve(signal_output, background_output, m):
     #print(max)
     #print(min)
     roc = np.empty(shape=(num_bin,2))
-    #print(roc[400:600,0])
     cut_idx_b = 0
     cut_idx_s = 0
     for i in range(num_bin):
@@ -620,8 +520,8 @@ valid_ch6(net, valid_iter)
 
 num_vset = num_data_val
 
-#output_cal = valid_roc(net, valid_iter_cal, num_vset)
-#output_back = valid_roc(net, valid_iter_back, num_vset)
+output_cal = valid_roc(net, valid_iter_cal, num_vset)
+output_back = valid_roc(net, valid_iter_back, num_vset)
 
 plt.figure()
 plt.xlabel('output (neuron 0)')
