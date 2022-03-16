@@ -32,7 +32,6 @@ def readDatasets(h5f, path):
     return np.array(data_list).transpose()
 
 calib_dsets_Ag = readDatasets(hf, 'calibration-cdl-feb2019-Ag-Ag-6kV/')
-
 calib_dsets_Cu2 = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-2kV/')
 calib_dsets_Cu09 = readDatasets(hf, 'calibration-cdl-feb2019-Cu-EPIC-0.9kV/')
 calib_dsets_Al = readDatasets(hf, 'calibration-cdl-feb2019-Al-Al-4kV/')
@@ -108,9 +107,7 @@ def datacut(calib_dsets):
                    #'eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
                    'rmsL','rmsT'
-                   ,'rot'
-                   #,'likeleíhood'
-                   ])
+                   ,'rot'])
     dfc_cut = df[ ((df['eccen']>1) & (df['eccen']<5)) & #((df['eFC']>0) & (df['eFC']<15)) &
                    ((df['kL']>-2) & (df['kL']<5)) & ((df['kT']>-2) & (df['kT']<4)) & ((df['len']>0) & (df['len']<14)) &
                    ((df['sL']>-2) & (df['sL']<2)) & ((df['sT']>-2) & (df['sT']<2)) & ((df['frac']>0) & (df['frac']<0.5)) &
@@ -264,7 +261,7 @@ valid_iter = data.DataLoader(valid_set, batch_size, shuffle=True, num_workers = 
 
 # define some necessary classes and functions
 
-def get_dataloader_workers():  #@save
+def get_dataloader_workers(): 
     """Use # processes to read the data."""
     return 0
 
@@ -314,16 +311,13 @@ net = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2),
                     nn.Conv2d(1, 1, kernel_size=5, padding=2), nn.Tanh(),
                     nn.MaxPool2d(kernel_size=2, stride=2),
                     nn.Conv2d(1, 1, kernel_size=5, padding=2), nn.Tanh(), 
-                    #nn.MaxPool2d(kernel_size=2, stride=2),
-                    #nn.Conv2d(1, 1, kernel_size=5), nn.Tanh(),
                     nn.Flatten(),
                     nn.Linear(1024, 300), nn.Tanh(),
-                    #nn.Linear(144, 30), nn.Tanh(),
                     nn.Linear(300, 30), nn.Tanh(), 
                     nn.Linear(30, 2))
 
 
-def evaluate_accuracy_gpu(net, data_iter, device=None):  #@save
+def evaluate_accuracy_gpu(net, data_iter, device=None): 
     """Compute the accuracy for a model on a dataset using a GPU."""
     if isinstance(net, nn.Module):
         net.eval()  # Set the model to evaluation mode
@@ -348,7 +342,7 @@ def evaluate_accuracy_gpu(net, data_iter, device=None):  #@save
     return metric[0] / metric[1], correct / (len(data_iter)*batch_size)
 
 
-def accuracy_validation_roc(net, data_iter, set_length, device=None):  #@save
+def accuracy_validation_outputdist(net, data_iter, set_length, device=None):  #@save
     """Compute the accuracy for a model on a dataset using a GPU."""
     if isinstance(net, nn.Module):
         net.eval()  # Set the model to evaluation mode
@@ -380,7 +374,7 @@ def accuracy_validation_roc(net, data_iter, set_length, device=None):  #@save
 
 
 def train_ch6(net, train_iter, test_iter, num_epochs, lr, device):
-    """Train a model with a GPU (defined in Chapter 6)."""
+    """Train a model with a GPU"""
     def init_weights(m):
         if type(m) == nn.Linear or type(m) == nn.Conv2d:
             nn.init.xavier_uniform_(m.weight)
@@ -444,71 +438,13 @@ def valid_ch6(net, valid_iter):
     print('Validation Accuracy:', valid_acc[1])
     return 0
 
-
-def valid_roc(net, valid_iter, set_length):
-    valid_acc = accuracy_validation_roc(net, valid_iter, set_length)
+def valid_output_dist(net, valid_iter, set_length):
+    valid_acc = accuracy_validation_outputdist(net, valid_iter, set_length)
     print('Validation accuracy:', valid_acc[0])
     res = valid_acc[1]
     res0 = res[:,0]
     res1 = res[:,1]
     return res0, res1
-
-
-#calculate roc-curve
-def roc_curve(signal_output, background_output, m):
-    back = background_output # use second neuron outputs
-    signal = signal_output
-    back = sorted(back)
-    signal = sorted(signal)
-    #print(len(back), len(signal))
-    min_b = np.min(back) 
-    max_b = np.max(back)
-    min_s = np.min(signal)
-    max_s = np.max(signal)
-
-    if min_b < min_s:
-        min = min_b
-    else:
-        min = min_s
-
-    if max_b < max_s:
-        max = max_s
-    else:
-        max = max_b
-
-    if m == 44:
-        max = 44
-
-    num_bin = 1000
-    bin_intervall = (max + abs(min)) / num_bin 
-    #print(max)
-    #print(min)
-    roc = np.empty(shape=(num_bin,2))
-    cut_idx_b = 0
-    cut_idx_s = 0
-    for i in range(num_bin):
-        cut = min + i * bin_intervall
-        for j in range(cut_idx_b ,len(back)):
-            if back[j] >= cut:
-                roc[i,0] = 1 - ((j-1) / len(back))
-                cut_idx_b = j
-                break
-        for n in range(cut_idx_s ,len(signal)):
-            if signal[n] >= cut:
-                cut_idx_s = n
-                break
-        roc[i,1] = (cut_idx_s-1) / len(signal)
-    #print(roc[400:600,0])
-
-    # if signal is lower, roc[0] is signal efficiency
-    return roc[:,0], roc[:,1] 
-'''
-    plt.xlabel('signal efficiency')
-    plt.ylabel('background rejection')
-    plt.plot(roc[:,1], roc[:,0],lw=2,label='')
-    #plt.legend()
-    plt.show()
-'''
 
 
 lr, num_epochs = 0.01, 100
@@ -520,8 +456,8 @@ valid_ch6(net, valid_iter)
 
 num_vset = num_data_val
 
-output_cal = valid_roc(net, valid_iter_cal, num_vset)
-output_back = valid_roc(net, valid_iter_back, num_vset)
+output_cal = valid_output_dist(net, valid_iter_cal, num_vset)
+output_back = valid_output_dist(net, valid_iter_back, num_vset)
 
 plt.figure()
 plt.xlabel('output (neuron 0)')
@@ -539,7 +475,6 @@ plt.hist(output_back[1],100,alpha = 0.5, lw=2, label= 'background')
 plt.hist(output_cal[1],100,alpha = 0.5, lw=2, label= 'signal_calibration all')
 plt.legend()
 plt.savefig('output1_valid_all_cnn')
-#plt.savefig('output1_distribution_all_100epoch_cnn_valid_new')
 plt.show()
 
 
