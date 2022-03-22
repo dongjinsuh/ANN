@@ -108,6 +108,7 @@ dfc_cut = dfc_cut.drop('likelihood', axis=1)
 
 
 # background data cut
+# use pandas to create a datsframe with 12 geometric characters as columns
 dfb = pd.DataFrame(background_dsets,
                    columns=['eccen','eFC',
                    'kL','kT','len','sL','sT','frac',#'hits',
@@ -115,6 +116,7 @@ dfb = pd.DataFrame(background_dsets,
                    ,'rot',
                    'likelihood'
                    ])
+# set cutrange values for each column
 dfb_cut = dfb[ ((dfb['eccen']>0.0) & (dfb['eccen']<10)) & ((dfb['eFC']>0.0) & (dfb['eFC']<5)) &
                ((dfb['kL']>-2) & (dfb['kL']<4)) & ((dfb['kT']>-2) & (dfb['kT']<4)) &
                ((dfb['len']>0) & (dfb['len']<18)) & ((dfb['sL']>-2) & (dfb['sL']<2)) &
@@ -155,7 +157,7 @@ dfv_cut = dfv_cut.drop('eFC', axis=1)
 dfv_cut = dfv_cut.drop('likelihood', axis=1)
 
 
-# cut for validation and LogL 
+# cut for validation and LogL data
 def validation_cut(calib_dsets):
     dfv = pd.DataFrame(calib_dsets,
                     columns=['eccen','eFC',
@@ -277,6 +279,7 @@ valid_data30 = energycutValidation(dfv_E, 7.25, 7.5, n_e)
 valid_data31 = energycutValidation(dfv_E, 7.5, 7.75, n_e)
 valid_data32 = energycutValidation(dfv_E, 7.75, 8, n_e)
 
+# put all data together after energy cut
 dset = np.concatenate((#valid_data1, 
 valid_data2, valid_data3, valid_data4, valid_data5, valid_data6,
                        valid_data7, valid_data8, valid_data9, valid_data10, valid_data11, valid_data12 
@@ -334,6 +337,8 @@ valid_data_back = background_data[80001:90001]
 
 
 # prepare dataset with labels
+# this class marks every photon event with a label 1 and 
+# every background event with label 0
 class Dataset(data.Dataset):
     'Characterizes a dataset for Pytorch'
     def __init__(self, train_data, labels):
@@ -358,6 +363,7 @@ class Dataset(data.Dataset):
             y = np.array([0.0,1.0])
         # y = self.labels
         return X, y
+
 
 label_calibration = 1
 label_background = 0
